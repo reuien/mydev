@@ -9,6 +9,7 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
+    "publish": "tsx scripts/publish.ts",
     "preview": "astro preview",
     "typecheck": "astro check",
     "test": "vitest run",
@@ -21,6 +22,7 @@
   "dependencies": {
     "@astrojs/cloudflare": "latest",
     "astro": "latest",
+    "gray-matter": "latest",
     "rehype-sanitize": "latest",
     "rehype-stringify": "latest",
     "remark-gfm": "latest",
@@ -35,6 +37,7 @@
     "@playwright/test": "latest",
     "@types/node": "latest",
     "miniflare": "3.20250718.3",
+    "tsx": "latest",
     "typescript": "^6.0.0",
     "vitest": "latest",
     "wrangler": "latest"
