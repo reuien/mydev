@@ -12,6 +12,7 @@
     "preview": "astro preview",
     "typecheck": "astro check",
     "test": "vitest run",
+    "test:contract:sqlite": "vitest run tests/contract/sqlite-repositories.test.ts",
     "test:unit": "vitest run tests/unit",
     "test:e2e": "playwright test"
   },
