@@ -20,6 +20,12 @@
   "dependencies": {
     "@astrojs/cloudflare": "latest",
     "astro": "latest",
+    "rehype-sanitize": "latest",
+    "rehype-stringify": "latest",
+    "remark-gfm": "latest",
+    "remark-parse": "latest",
+    "remark-rehype": "latest",
+    "unified": "latest",
     "zod": "latest"
   },
   "devDependencies": {
