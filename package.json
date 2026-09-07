@@ -12,6 +12,7 @@
     "preview": "astro preview",
     "typecheck": "astro check",
     "test": "vitest run",
+    "test:contract:d1": "vitest run tests/contract/d1-repositories.test.ts",
     "test:contract:sqlite": "vitest run tests/contract/sqlite-repositories.test.ts",
     "test:unit": "vitest run tests/unit",
     "test:e2e": "playwright test"
@@ -23,8 +24,10 @@
   },
   "devDependencies": {
     "@astrojs/check": "latest",
+    "@cloudflare/workers-types": "latest",
     "@playwright/test": "latest",
     "@types/node": "latest",
+    "miniflare": "3.20250718.3",
     "typescript": "^6.0.0",
     "vitest": "latest",
     "wrangler": "latest"

@@ -1,4 +1,4 @@
-import type { DatabaseSync } from 'node:sqlite';
+import type { D1Database } from '@cloudflare/workers-types';
 
 import { SlugConflictError, StorageUnavailableError } from '../../domain/errors';
 import type { Post } from '../../domain/post';
@@ -16,17 +16,17 @@ function translateWriteError(error: unknown, slug: string): never {
   if (error instanceof Error && error.message.includes('UNIQUE constraint failed: posts.slug')) {
     throw new SlugConflictError(`Post slug already exists: ${slug}`);
   }
-  throw new StorageUnavailableError('SQLite post operation failed', { cause: error });
+  throw new StorageUnavailableError('D1 post operation failed', { cause: error });
 }
 
-export class SqlitePostRepository implements PostRepository {
-  constructor(private readonly database: DatabaseSync) {}
+export class D1PostRepository implements PostRepository {
+  constructor(private readonly database: D1Database) {}
 
   async create(input: NewPost): Promise<Post> {
     try {
-      this.database
+      await this.database
         .prepare(`INSERT INTO posts (${POST_COLUMNS}) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-        .run(
+        .bind(
           input.id,
           input.slug,
           input.title,
@@ -37,7 +37,8 @@ export class SqlitePostRepository implements PostRepository {
           input.createdAt,
           input.updatedAt,
           input.publishedAt,
-        );
+        )
+        .run();
       return input;
     } catch (error) {
       return translateWriteError(error, input.slug);
@@ -58,69 +59,74 @@ export class SqlitePostRepository implements PostRepository {
 
   async listPublic(page: PageRequest): Promise<PageResult<PostListItem>> {
     try {
-      const rows = this.database
-        .prepare(
-          `SELECT ${POST_COLUMNS} FROM posts WHERE status = 'published'
-           ORDER BY published_at DESC, id DESC LIMIT ? OFFSET ?`,
-        )
-        .all(page.limit, page.offset) as PostRow[];
-      const count = this.database.prepare("SELECT COUNT(*) AS total FROM posts WHERE status = 'published'").get() as {
-        total: number;
-      };
-      return { items: rows.map(toPost).map(toPostListItem), total: Number(count.total) };
+      const [rows, count] = await Promise.all([
+        this.database
+          .prepare(
+            `SELECT ${POST_COLUMNS} FROM posts WHERE status = 'published'
+             ORDER BY published_at DESC, id DESC LIMIT ? OFFSET ?`,
+          )
+          .bind(page.limit, page.offset)
+          .all<PostRow>(),
+        this.database.prepare("SELECT COUNT(*) AS total FROM posts WHERE status = 'published'").first<{ total: number }>(),
+      ]);
+      return { items: rows.results.map(toPost).map(toPostListItem), total: Number(count?.total ?? 0) };
     } catch (error) {
-      throw new StorageUnavailableError('SQLite post listing failed', { cause: error });
+      throw new StorageUnavailableError('D1 post listing failed', { cause: error });
     }
   }
 
   async updateContent(id: string, input: UpdatePost, now: string): Promise<Post | null> {
     try {
-      const result = this.database
+      const result = await this.database
         .prepare(
           `UPDATE posts SET title = ?, excerpt = ?, body_markdown = ?, cover_image_url = ?, updated_at = ?
            WHERE id = ?`,
         )
-        .run(input.title, input.excerpt, input.bodyMarkdown, input.coverImageUrl, now, id);
-      return result.changes === 0 ? null : this.findAuthorById(id);
+        .bind(input.title, input.excerpt, input.bodyMarkdown, input.coverImageUrl, now, id)
+        .run();
+      return result.meta.changes === 0 ? null : this.findAuthorById(id);
     } catch (error) {
-      throw new StorageUnavailableError('SQLite post update failed', { cause: error });
+      throw new StorageUnavailableError('D1 post update failed', { cause: error });
     }
   }
 
   async transitionStatus(id: string, target: Post['status'], now: string): Promise<Post | null> {
     try {
       if (target === 'published') {
-        this.database
+        await this.database
           .prepare(
             `UPDATE posts SET status = 'published', published_at = ?, updated_at = ?
              WHERE id = ? AND status = 'draft'`,
           )
-          .run(now, now, id);
+          .bind(now, now, id)
+          .run();
       } else {
-        this.database
+        await this.database
           .prepare("UPDATE posts SET status = 'draft', updated_at = ? WHERE id = ? AND status = 'published'")
-          .run(now, id);
+          .bind(now, id)
+          .run();
       }
       return this.findAuthorById(id);
     } catch (error) {
-      throw new StorageUnavailableError('SQLite post transition failed', { cause: error });
+      throw new StorageUnavailableError('D1 post transition failed', { cause: error });
     }
   }
 
   async delete(id: string): Promise<boolean> {
     try {
-      return this.database.prepare('DELETE FROM posts WHERE id = ?').run(id).changes > 0;
+      const result = await this.database.prepare('DELETE FROM posts WHERE id = ?').bind(id).run();
+      return result.meta.changes > 0;
     } catch (error) {
-      throw new StorageUnavailableError('SQLite post delete failed', { cause: error });
+      throw new StorageUnavailableError('D1 post delete failed', { cause: error });
     }
   }
 
-  private findOne(sql: string, value: string): Post | null {
+  private async findOne(sql: string, value: string): Promise<Post | null> {
     try {
-      const row = this.database.prepare(sql).get(value) as PostRow | undefined;
+      const row = await this.database.prepare(sql).bind(value).first<PostRow>();
       return row ? toPost(row) : null;
     } catch (error) {
-      throw new StorageUnavailableError('SQLite post lookup failed', { cause: error });
+      throw new StorageUnavailableError('D1 post lookup failed', { cause: error });
     }
   }
 }

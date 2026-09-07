@@ -4,18 +4,18 @@ import { SlugConflictError } from '../../src/domain/errors';
 import type { PostRepository } from '../../src/repositories/post-repository';
 import { postFixture } from '../fixtures/posts';
 
-type Harness = { repository: PostRepository; cleanup: () => void };
+type Harness = { repository: PostRepository; cleanup: () => void | Promise<void> };
 
-export function runPostRepositoryContract(name: string, createHarness: () => Harness): void {
+export function runPostRepositoryContract(name: string, createHarness: () => Harness | Promise<Harness>): void {
   describe(`${name} PostRepository contract`, () => {
     let harness: Harness;
 
-    beforeEach(() => {
-      harness = createHarness();
+    beforeEach(async () => {
+      harness = await createHarness();
     });
 
-    afterEach(() => {
-      harness.cleanup();
+    afterEach(async () => {
+      await harness?.cleanup();
     });
 
     it('creates, reads, updates, and deletes an author post', async () => {

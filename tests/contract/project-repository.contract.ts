@@ -4,18 +4,18 @@ import { SlugConflictError } from '../../src/domain/errors';
 import type { ProjectRepository } from '../../src/repositories/project-repository';
 import { projectFixture } from '../fixtures/projects';
 
-type Harness = { repository: ProjectRepository; cleanup: () => void };
+type Harness = { repository: ProjectRepository; cleanup: () => void | Promise<void> };
 
-export function runProjectRepositoryContract(name: string, createHarness: () => Harness): void {
+export function runProjectRepositoryContract(name: string, createHarness: () => Harness | Promise<Harness>): void {
   describe(`${name} ProjectRepository contract`, () => {
     let harness: Harness;
 
-    beforeEach(() => {
-      harness = createHarness();
+    beforeEach(async () => {
+      harness = await createHarness();
     });
 
-    afterEach(() => {
-      harness.cleanup();
+    afterEach(async () => {
+      await harness?.cleanup();
     });
 
     it('creates, maps, updates, and deletes a project', async () => {
