@@ -82,5 +82,29 @@ export function runPostRepositoryContract(name: string, createHarness: () => Har
         harness.repository.create(postFixture({ id: '00000000-0000-4000-8000-000000000002' })),
       ).rejects.toBeInstanceOf(SlugConflictError);
     });
+
+    it('replays matching idempotent creates and rejects a changed request', async () => {
+      const operation = {
+        key: 'create-post-key',
+        requestHash: 'a'.repeat(64),
+        createdAt: '2026-09-07T00:00:00.000Z',
+        expiresAt: '2026-09-08T00:00:00.000Z',
+      };
+      const first = await harness.repository.createIdempotently(postFixture(), operation);
+      const replay = await harness.repository.createIdempotently(
+        postFixture({ id: '00000000-0000-4000-8000-000000000009' }),
+        { ...operation, createdAt: '2026-09-07T01:00:00.000Z' },
+      );
+
+      expect(first.replayed).toBe(false);
+      expect(replay).toEqual({ resource: first.resource, replayed: true });
+      await expect(
+        harness.repository.createIdempotently(postFixture(), {
+          ...operation,
+          requestHash: 'b'.repeat(64),
+          createdAt: '2026-09-07T02:00:00.000Z',
+        }),
+      ).rejects.toMatchObject({ name: 'IdempotencyConflictError' });
+    });
   });
 }

@@ -59,5 +59,22 @@ export function runProjectRepositoryContract(name: string, createHarness: () => 
         harness.repository.create(projectFixture({ id: '10000000-0000-4000-8000-000000000002' })),
       ).rejects.toBeInstanceOf(SlugConflictError);
     });
+
+    it('replays matching idempotent project creation', async () => {
+      const operation = {
+        key: 'create-project-key',
+        requestHash: 'c'.repeat(64),
+        createdAt: '2026-09-07T00:00:00.000Z',
+        expiresAt: '2026-09-08T00:00:00.000Z',
+      };
+      const first = await harness.repository.createIdempotently(projectFixture(), operation);
+      const replay = await harness.repository.createIdempotently(
+        projectFixture({ id: '10000000-0000-4000-8000-000000000009' }),
+        { ...operation, createdAt: '2026-09-07T01:00:00.000Z' },
+      );
+
+      expect(first.replayed).toBe(false);
+      expect(replay).toEqual({ resource: first.resource, replayed: true });
+    });
   });
 }

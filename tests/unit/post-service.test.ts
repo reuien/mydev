@@ -14,6 +14,7 @@ function repositoryMock(): PostRepository {
     updateContent: vi.fn(),
     transitionStatus: vi.fn(),
     delete: vi.fn(),
+    createIdempotently: vi.fn(),
   };
 }
 

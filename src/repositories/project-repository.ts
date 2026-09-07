@@ -1,4 +1,5 @@
 import type { Project } from '../domain/project';
+import type { IdempotencyInput, IdempotentResult } from './post-repository';
 
 export type NewProject = Project;
 export type UpdateProject = Pick<
@@ -15,4 +16,5 @@ export interface ProjectRepository {
   listPublic(): Promise<ProjectListItem[]>;
   update(id: string, input: UpdateProject, now: string): Promise<Project | null>;
   delete(id: string): Promise<boolean>;
+  createIdempotently(input: NewProject, operation: IdempotencyInput): Promise<IdempotentResult<Project>>;
 }

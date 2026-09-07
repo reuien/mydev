@@ -6,6 +6,7 @@ import type {
 } from '../repositories/project-repository';
 import type { CreateProjectInput } from '../schemas/project';
 import { defaultServiceDependencies, type ServiceDependencies } from './ports';
+import { createIdempotencyOperation } from './idempotency-service';
 
 export class ProjectService {
   constructor(
@@ -21,6 +22,17 @@ export class ProjectService {
       createdAt: now,
       updatedAt: now,
     });
+  }
+
+  async createIdempotently(input: CreateProjectInput, key: string) {
+    const now = this.dependencies.now();
+    const resource: Project = {
+      ...input,
+      id: this.dependencies.generateId(),
+      createdAt: now,
+      updatedAt: now,
+    };
+    return this.repository.createIdempotently(resource, await createIdempotencyOperation(key, input, now));
   }
 
   getAuthorById(id: string): Promise<Project | null> {

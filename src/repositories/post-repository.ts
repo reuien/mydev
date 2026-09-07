@@ -5,6 +5,8 @@ export type UpdatePost = Pick<Post, 'title' | 'excerpt' | 'bodyMarkdown' | 'cove
 export type PostListItem = Omit<Post, 'bodyMarkdown' | 'status' | 'createdAt'>;
 export type PageRequest = { limit: number; offset: number };
 export type PageResult<T> = { items: T[]; total: number };
+export type IdempotencyInput = { key: string; requestHash: string; createdAt: string; expiresAt: string };
+export type IdempotentResult<T> = { resource: T; replayed: boolean };
 
 export interface PostRepository {
   create(input: NewPost): Promise<Post>;
@@ -15,4 +17,5 @@ export interface PostRepository {
   updateContent(id: string, input: UpdatePost, now: string): Promise<Post | null>;
   transitionStatus(id: string, target: PostStatus, now: string): Promise<Post | null>;
   delete(id: string): Promise<boolean>;
+  createIdempotently(input: NewPost, operation: IdempotencyInput): Promise<IdempotentResult<Post>>;
 }

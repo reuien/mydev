@@ -1,10 +1,12 @@
 import type { D1Database } from '@cloudflare/workers-types';
 
-import { SlugConflictError, StorageUnavailableError } from '../../domain/errors';
+import { IdempotencyConflictError, SlugConflictError, StorageUnavailableError } from '../../domain/errors';
 import type { Post } from '../../domain/post';
 import { POST_COLUMNS, type PostRow, toPost, toPostListItem } from '../mappers';
 import type {
   NewPost,
+  IdempotencyInput,
+  IdempotentResult,
   PageRequest,
   PageResult,
   PostListItem,
@@ -118,6 +120,64 @@ export class D1PostRepository implements PostRepository {
       return result.meta.changes > 0;
     } catch (error) {
       throw new StorageUnavailableError('D1 post delete failed', { cause: error });
+    }
+  }
+
+  async createIdempotently(input: NewPost, operation: IdempotencyInput): Promise<IdempotentResult<Post>> {
+    try {
+      const existing = await this.database
+        .prepare(
+          `SELECT request_hash, response_body, expires_at FROM idempotency_keys
+           WHERE scope = 'create_post' AND key = ?`,
+        )
+        .bind(operation.key)
+        .first<{ request_hash: string; response_body: string; expires_at: string }>();
+      if (existing && existing.expires_at > operation.createdAt) {
+        if (existing.request_hash !== operation.requestHash) throw new IdempotencyConflictError('Idempotency key conflict');
+        return { resource: JSON.parse(existing.response_body) as Post, replayed: true };
+      }
+
+      const statements = [];
+      if (existing) {
+        statements.push(
+          this.database.prepare("DELETE FROM idempotency_keys WHERE scope = 'create_post' AND key = ?").bind(operation.key),
+        );
+      }
+      statements.push(
+        this.database
+          .prepare(`INSERT INTO posts (${POST_COLUMNS}) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+          .bind(
+            input.id,
+            input.slug,
+            input.title,
+            input.excerpt,
+            input.bodyMarkdown,
+            input.coverImageUrl,
+            input.status,
+            input.createdAt,
+            input.updatedAt,
+            input.publishedAt,
+          ),
+        this.database
+          .prepare(
+            `INSERT INTO idempotency_keys
+             (scope, key, request_hash, response_status, response_body, resource_id, created_at, expires_at)
+             VALUES ('create_post', ?, ?, 201, ?, ?, ?, ?)`,
+          )
+          .bind(
+            operation.key,
+            operation.requestHash,
+            JSON.stringify(input),
+            input.id,
+            operation.createdAt,
+            operation.expiresAt,
+          ),
+      );
+      await this.database.batch(statements);
+      return { resource: input, replayed: false };
+    } catch (error) {
+      if (error instanceof IdempotencyConflictError) throw error;
+      return translateWriteError(error, input.slug);
     }
   }
 

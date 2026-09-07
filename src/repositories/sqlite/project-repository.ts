@@ -1,6 +1,6 @@
 import type { DatabaseSync } from 'node:sqlite';
 
-import { SlugConflictError, StorageUnavailableError } from '../../domain/errors';
+import { IdempotencyConflictError, SlugConflictError, StorageUnavailableError } from '../../domain/errors';
 import type { Project } from '../../domain/project';
 import { PROJECT_COLUMNS, type ProjectRow, toProject, toProjectListItem } from '../mappers';
 import type {
@@ -9,6 +9,7 @@ import type {
   ProjectRepository,
   UpdateProject,
 } from '../project-repository';
+import type { IdempotencyInput, IdempotentResult } from '../post-repository';
 
 function translateWriteError(error: unknown, slug: string): never {
   if (error instanceof Error && error.message.includes('UNIQUE constraint failed: projects.slug')) {
@@ -97,6 +98,51 @@ export class SqliteProjectRepository implements ProjectRepository {
       return this.database.prepare('DELETE FROM projects WHERE id = ?').run(id).changes > 0;
     } catch (error) {
       throw new StorageUnavailableError('SQLite project delete failed', { cause: error });
+    }
+  }
+
+  async createIdempotently(input: NewProject, operation: IdempotencyInput): Promise<IdempotentResult<Project>> {
+    try {
+      const existing = this.database
+        .prepare(
+          `SELECT request_hash, response_body, expires_at FROM idempotency_keys
+           WHERE scope = 'create_project' AND key = ?`,
+        )
+        .get(operation.key) as { request_hash: string; response_body: string; expires_at: string } | undefined;
+      if (existing && existing.expires_at > operation.createdAt) {
+        if (existing.request_hash !== operation.requestHash) throw new IdempotencyConflictError('Idempotency key conflict');
+        return { resource: JSON.parse(existing.response_body) as Project, replayed: true };
+      }
+
+      this.database.exec('BEGIN IMMEDIATE');
+      if (existing) {
+        this.database
+          .prepare("DELETE FROM idempotency_keys WHERE scope = 'create_project' AND key = ?")
+          .run(operation.key);
+      }
+      const resource = await this.create(input);
+      this.database
+        .prepare(
+          `INSERT INTO idempotency_keys
+           (scope, key, request_hash, response_status, response_body, resource_id, created_at, expires_at)
+           VALUES ('create_project', ?, ?, 201, ?, ?, ?, ?)`,
+        )
+        .run(
+          operation.key,
+          operation.requestHash,
+          JSON.stringify(resource),
+          resource.id,
+          operation.createdAt,
+          operation.expiresAt,
+        );
+      this.database.exec('COMMIT');
+      return { resource, replayed: false };
+    } catch (error) {
+      try {
+        this.database.exec('ROLLBACK');
+      } catch {}
+      if (error instanceof IdempotencyConflictError || error instanceof SlugConflictError) throw error;
+      throw new StorageUnavailableError('SQLite idempotent project create failed', { cause: error });
     }
   }
 

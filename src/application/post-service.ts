@@ -8,6 +8,7 @@ import type {
 } from '../repositories/post-repository';
 import type { CreatePostInput } from '../schemas/post';
 import { defaultServiceDependencies, type ServiceDependencies } from './ports';
+import { createIdempotencyOperation } from './idempotency-service';
 
 export class PostService {
   constructor(
@@ -25,6 +26,19 @@ export class PostService {
       updatedAt: now,
       publishedAt: null,
     });
+  }
+
+  async createIdempotently(input: CreatePostInput, key: string) {
+    const now = this.dependencies.now();
+    const resource: Post = {
+      ...input,
+      id: this.dependencies.generateId(),
+      status: 'draft',
+      createdAt: now,
+      updatedAt: now,
+      publishedAt: null,
+    };
+    return this.repository.createIdempotently(resource, await createIdempotencyOperation(key, input, now));
   }
 
   getAuthorById(id: string): Promise<Post | null> {

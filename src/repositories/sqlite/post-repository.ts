@@ -1,10 +1,12 @@
 import type { DatabaseSync } from 'node:sqlite';
 
-import { SlugConflictError, StorageUnavailableError } from '../../domain/errors';
+import { IdempotencyConflictError, SlugConflictError, StorageUnavailableError } from '../../domain/errors';
 import type { Post } from '../../domain/post';
 import { POST_COLUMNS, type PostRow, toPost, toPostListItem } from '../mappers';
 import type {
   NewPost,
+  IdempotencyInput,
+  IdempotentResult,
   PageRequest,
   PageResult,
   PostListItem,
@@ -112,6 +114,51 @@ export class SqlitePostRepository implements PostRepository {
       return this.database.prepare('DELETE FROM posts WHERE id = ?').run(id).changes > 0;
     } catch (error) {
       throw new StorageUnavailableError('SQLite post delete failed', { cause: error });
+    }
+  }
+
+  async createIdempotently(input: NewPost, operation: IdempotencyInput): Promise<IdempotentResult<Post>> {
+    try {
+      const existing = this.database
+        .prepare(
+          `SELECT request_hash, response_body, expires_at FROM idempotency_keys
+           WHERE scope = 'create_post' AND key = ?`,
+        )
+        .get(operation.key) as { request_hash: string; response_body: string; expires_at: string } | undefined;
+      if (existing && existing.expires_at > operation.createdAt) {
+        if (existing.request_hash !== operation.requestHash) throw new IdempotencyConflictError('Idempotency key conflict');
+        return { resource: JSON.parse(existing.response_body) as Post, replayed: true };
+      }
+
+      this.database.exec('BEGIN IMMEDIATE');
+      if (existing) {
+        this.database
+          .prepare("DELETE FROM idempotency_keys WHERE scope = 'create_post' AND key = ?")
+          .run(operation.key);
+      }
+      const resource = await this.create(input);
+      this.database
+        .prepare(
+          `INSERT INTO idempotency_keys
+           (scope, key, request_hash, response_status, response_body, resource_id, created_at, expires_at)
+           VALUES ('create_post', ?, ?, 201, ?, ?, ?, ?)`,
+        )
+        .run(
+          operation.key,
+          operation.requestHash,
+          JSON.stringify(resource),
+          resource.id,
+          operation.createdAt,
+          operation.expiresAt,
+        );
+      this.database.exec('COMMIT');
+      return { resource, replayed: false };
+    } catch (error) {
+      try {
+        this.database.exec('ROLLBACK');
+      } catch {}
+      if (error instanceof IdempotencyConflictError || error instanceof SlugConflictError) throw error;
+      throw new StorageUnavailableError('SQLite idempotent post create failed', { cause: error });
     }
   }
 

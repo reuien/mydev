@@ -13,6 +13,7 @@ describe('ProjectService', () => {
       listPublic: vi.fn(),
       update: vi.fn(),
       delete: vi.fn(),
+      createIdempotently: vi.fn(),
     };
     const service = new ProjectService(repository, {
       now: () => '2026-09-07T00:00:00.000Z',

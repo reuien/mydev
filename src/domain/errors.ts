@@ -13,3 +13,7 @@ export class SlugConflictError extends DomainError {
 export class StorageUnavailableError extends DomainError {
   override readonly name = 'StorageUnavailableError';
 }
+
+export class IdempotencyConflictError extends DomainError {
+  override readonly name = 'IdempotencyConflictError';
+}
