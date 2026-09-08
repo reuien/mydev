@@ -1,12 +1,12 @@
 export const author = {
-  name: 'Yuinen',
+  name: 'Reuien',
   role: '全栈开发者',
-  email: 'hello@mydev.dev',
-  intro: '我专注于设计和构建目标明确的 Web 产品，从数据模型一直打磨到最终交互。',
+  email: '1507087784@qq.com',
+  intro: 'For better and better',
   about: [
-    '我的工作位于产品思维与软件工程的交汇处。我关注系统是否易于理解、足够可靠，以及使用起来是否自然顺畅。',
+    '本人的一个小博客 里面有一些项目经历和个人的一些文本 不定时更新 如果你刷到了这个网站有什么见解欢迎在下方留言',
     'MyDev 是这套实践的持续记录：这里收录精选项目、技术文章，以及它们背后的设计与工程决策。',
   ],
-  focus: ['TypeScript 系统', '云原生应用', '无障碍界面'],
-  links: [{ label: 'GitHub', href: 'https://github.com/' }],
+  focus: ['TypeScript 系统', '云原生应用', 'Golang开发'],
+  links: [{label: '我的GitHub仓库', href: 'https://github.com/reuien' }],
 } as const;
