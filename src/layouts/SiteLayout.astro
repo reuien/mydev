@@ -1,5 +1,6 @@
 ---
 import Header from '../components/Header.astro';
+import CosmicBackdrop from '../components/CosmicBackdrop.astro';
 import '../styles/global.css';
 
 interface Props { title?: string; description?: string }
@@ -21,7 +22,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin);
   </head>
   <body>
     <a class="skip-link" href="#content">跳至主要内容</a>
-    <div class="ambient" aria-hidden="true"><span></span><span></span><span></span></div>
+    <CosmicBackdrop />
     <Header />
     <main id="content"><slot /></main>
     <footer class="site-footer frame">
