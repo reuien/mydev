@@ -6,6 +6,12 @@ test('visitor can understand and navigate the portfolio', async ({ page }) => {
   await expect(backdrop).toHaveAttribute('aria-hidden', 'true');
   await expect(backdrop.locator('canvas')).toHaveCount(1);
   expect(await backdrop.evaluate((element) => getComputedStyle(element).pointerEvents)).toBe('none');
+  const aurora = backdrop.locator('.aurora-primary');
+  const initialTransform = await aurora.evaluate((element) => getComputedStyle(element).transform);
+  await page.waitForTimeout(400);
+  await expect
+    .poll(() => aurora.evaluate((element) => getComputedStyle(element).transform))
+    .not.toBe(initialTransform);
   await expect(page.getByRole('heading', { name: /Build/ })).toBeVisible();
   await expect(page.locator('.hero-copy p')).toBeVisible();
   await expect(page.getByRole('link', { name: 'Projects', exact: true })).toBeVisible();

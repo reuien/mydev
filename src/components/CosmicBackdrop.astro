@@ -94,7 +94,7 @@
         meteor.x -= delta * meteor.speed;
         meteor.y += delta * meteor.speed * 0.62;
         meteor.life -= delta;
-        const opacity = Math.sin((meteor.life / meteor.maxLife) * Math.PI) * 0.5;
+        const opacity = Math.sin((meteor.life / meteor.maxLife) * Math.PI) * 0.72;
         const gradient = context.createLinearGradient(
           meteor.x,
           meteor.y,
@@ -105,7 +105,7 @@
         gradient.addColorStop(1, 'rgba(100, 230, 255, 0)');
         context.beginPath();
         context.strokeStyle = gradient;
-        context.lineWidth = 1;
+        context.lineWidth = 1.2;
         context.moveTo(meteor.x, meteor.y);
         context.lineTo(meteor.x + meteor.length, meteor.y - meteor.length * 0.62);
         context.stroke();
@@ -125,10 +125,10 @@
     const updatePointer = (event: PointerEvent) => {
       targetX = event.clientX / width - 0.5;
       targetY = event.clientY / height - 0.5;
-      backdrop.style.setProperty('--pointer-x', `${targetX * 12}px`);
-      backdrop.style.setProperty('--pointer-y', `${targetY * 8}px`);
-      backdrop.style.setProperty('--pointer-x-reverse', `${targetX * -7.2}px`);
-      backdrop.style.setProperty('--pointer-y-reverse', `${targetY * -4.8}px`);
+      backdrop.style.setProperty('--pointer-x', `${targetX * 24}px`);
+      backdrop.style.setProperty('--pointer-y', `${targetY * 16}px`);
+      backdrop.style.setProperty('--pointer-x-reverse', `${targetX * -14.4}px`);
+      backdrop.style.setProperty('--pointer-y-reverse', `${targetY * -9.6}px`);
     };
 
     const handleVisibility = () => {
