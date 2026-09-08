@@ -1,0 +1,30 @@
+---
+import Header from '../components/Header.astro';
+import '../styles/global.css';
+
+interface Props { title?: string; description?: string }
+const { title = 'MyDev', description = 'Projects and writing by Yuinen.' } = Astro.props;
+const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin);
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:type" content="website" />
+    <title>{title}</title>
+  </head>
+  <body>
+    <a class="skip-link" href="#content">Skip to content</a>
+    <Header />
+    <main id="content"><slot /></main>
+    <footer class="site-footer frame">
+      <span>MYDEV / BUILT IN THE OPEN</span><span>{new Date().getUTCFullYear()}</span>
+    </footer>
+  </body>
+</html>

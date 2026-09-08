@@ -7,11 +7,11 @@ export default defineConfig({
     trace: 'retain-on-failure',
   },
   projects: [
-    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
-    { name: 'mobile-chromium', use: { ...devices['Pixel 7'] } },
+    { name: 'chromium', use: { ...devices['Desktop Chrome'], channel: 'chrome' } },
+    { name: 'mobile-chromium', use: { ...devices['Pixel 7'], channel: 'chrome' } },
   ],
   webServer: {
-    command: 'pnpm dev --host 127.0.0.1',
+    command: 'pnpm wrangler d1 migrations apply mydev --local && pnpm dev --background --host 127.0.0.1 && pnpm astro dev logs --follow',
     url: 'http://127.0.0.1:4321',
     reuseExistingServer: !process.env.CI,
   },

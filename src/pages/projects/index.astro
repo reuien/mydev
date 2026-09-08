@@ -1,0 +1,8 @@
+---
+import { env } from 'cloudflare:workers';
+import ProjectCard from '../../components/ProjectCard.astro';
+import { createServicesFromEnvironment } from '../../http/context';
+import SiteLayout from '../../layouts/SiteLayout.astro';
+const projects = await createServicesFromEnvironment(env).projects.listPublic();
+---
+<SiteLayout title="Projects — MyDev" description="Selected product and engineering work."><header class="page-head"><p class="eyebrow">Archive / Selected work</p><h1>Projects</h1><p>Products, experiments, and the engineering decisions behind them.</p></header><section class="section">{projects.length ? projects.map((project,index)=><ProjectCard {project} {index}/>) : <p class="empty">Projects are being documented.</p>}</section></SiteLayout>

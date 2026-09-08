@@ -33,6 +33,7 @@
   },
   "devDependencies": {
     "@astrojs/check": "latest",
+    "@axe-core/playwright": "latest",
     "@cloudflare/workers-types": "latest",
     "@playwright/test": "latest",
     "@types/node": "latest",

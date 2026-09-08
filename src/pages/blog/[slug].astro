@@ -1,0 +1,8 @@
+---
+import { env } from 'cloudflare:workers';
+import { createServicesFromEnvironment } from '../../http/context';
+import { renderMarkdown } from '../../lib/markdown';
+import SiteLayout from '../../layouts/SiteLayout.astro';
+const post=await createServicesFromEnvironment(env).posts.getPublicBySlug(Astro.params.slug??''); if(!post) Astro.response.status=404; const html=post?await renderMarkdown(post.bodyMarkdown):'';
+---
+<SiteLayout title={post?`${post.title} — MyDev`:'Post not found — MyDev'} description={post?.excerpt??'The requested article does not exist.'}>{post?<><header class="page-head"><p class="eyebrow">Writing / {post.publishedAt?.slice(0,10)}</p><h1>{post.title}</h1><p>{post.excerpt}</p></header><article class="prose" set:html={html}/></>:<header class="page-head"><p class="eyebrow">404 / Missing</p><h1>Not found.</h1><p>This note is unavailable. <a href="/blog">Return to writing</a>.</p></header>}</SiteLayout>

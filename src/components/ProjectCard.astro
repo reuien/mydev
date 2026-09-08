@@ -1,0 +1,10 @@
+---
+import type { ProjectListItem } from '../repositories/project-repository';
+interface Props { project: ProjectListItem; index?: number }
+const { project, index = 0 } = Astro.props;
+---
+<article class="card project-card">
+  <span class="card-index">P—{String(index + 1).padStart(2, '0')}</span>
+  <div><h3><a href={`/projects/${project.slug}`}>{project.name}</a></h3><p>{project.summary}</p><ul class="tag-list" aria-label="Technologies">{project.techStack.map((item) => <li>{item}</li>)}</ul></div>
+  <a class="arrow-link" href={`/projects/${project.slug}`} aria-label={`View ${project.name}`}>↗</a>
+</article>
