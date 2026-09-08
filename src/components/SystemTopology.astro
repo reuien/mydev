@@ -17,14 +17,22 @@
       <path d="M40 100H600M40 180H600M40 260H600M40 340H600M40 420H600" />
       <path d="M80 60V460M200 60V460M320 60V460M440 60V460M560 60V460" />
     </g>
-    <g class="topology-orbits">
-      <ellipse cx="320" cy="260" rx="224" ry="112" />
-      <ellipse cx="320" cy="260" rx="158" ry="212" transform="rotate(58 320 260)" />
-      <circle cx="320" cy="260" r="72" />
-    </g>
-    <g class="topology-links">
-      <path d="M320 260L154 160L494 118L530 350L218 414Z" />
-      <path d="M154 160L530 350M494 118L218 414" />
+    <g class="topology-auto-rotor" data-topology-rotor>
+      <g class="topology-pointer-rotor">
+        <g class="topology-orbits">
+          <ellipse cx="320" cy="260" rx="224" ry="112" />
+          <ellipse cx="320" cy="260" rx="158" ry="212" transform="rotate(58 320 260)" />
+          <circle cx="320" cy="260" r="72" />
+        </g>
+        <g class="topology-links">
+          <path d="M320 260L154 160L494 118L530 350L218 414Z" />
+          <path d="M154 160L530 350M494 118L218 414" />
+        </g>
+        <g class="topology-node node-1" transform="translate(154 160)"><circle r="7" /><text x="14" y="4">PROJECTS</text></g>
+        <g class="topology-node node-2" transform="translate(494 118)"><circle r="7" /><text x="-14" y="-13" text-anchor="end">WRITING</text></g>
+        <g class="topology-node node-3" transform="translate(530 350)"><circle r="7" /><text x="-14" y="4" text-anchor="end">ABOUT</text></g>
+        <g class="topology-node node-4" transform="translate(218 414)"><circle r="7" /><text x="14" y="4">GUESTBOOK</text></g>
+      </g>
     </g>
     <g class="topology-core">
       <circle cx="320" cy="260" r="88" fill="url(#core-glow)" />
@@ -32,10 +40,6 @@
       <circle class="core-pulse" cx="320" cy="260" r="20" />
       <text x="320" y="292" text-anchor="middle">REUIEN / ROOT</text>
     </g>
-    <g class="topology-node node-1" transform="translate(154 160)"><circle r="7" /><text x="14" y="4">PROJECTS</text></g>
-    <g class="topology-node node-2" transform="translate(494 118)"><circle r="7" /><text x="-14" y="-13" text-anchor="end">WRITING</text></g>
-    <g class="topology-node node-3" transform="translate(530 350)"><circle r="7" /><text x="-14" y="4" text-anchor="end">ABOUT</text></g>
-    <g class="topology-node node-4" transform="translate(218 414)"><circle r="7" /><text x="14" y="4">GUESTBOOK</text></g>
     <path class="signal-scan" d="M62 260H578" stroke="url(#signal-line)" />
   </svg>
   <div class="topology-axis"><span>X 121.4737</span><span>Y 31.2304</span></div>
@@ -53,6 +57,7 @@
       topology.style.setProperty('--topology-y', `${y * 22}px`);
       topology.style.setProperty('--topology-rx', `${y * -9}deg`);
       topology.style.setProperty('--topology-ry', `${x * 12}deg`);
+      topology.style.setProperty('--topology-spin', `${x * 34}deg`);
     };
     window.addEventListener('pointermove', updateView, { passive: true });
   }

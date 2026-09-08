@@ -18,6 +18,12 @@ test('visitor can understand and navigate the portfolio', async ({ page }, testI
   await expect(page.getByRole('region', { name: 'Activity stream' })).toBeVisible();
   const topology = page.locator('[data-system-topology]');
   await expect(topology).toHaveCount(1);
+  const topologyRotor = topology.locator('[data-topology-rotor]');
+  await expect(topologyRotor).toHaveCount(1);
+  const initialRotorTransform = await topologyRotor.evaluate((element) => getComputedStyle(element).transform);
+  await expect
+    .poll(() => topologyRotor.evaluate((element) => getComputedStyle(element).transform))
+    .not.toBe(initialRotorTransform);
   if (testInfo.project.name === 'chromium') {
     await page.mouse.move(80, 120);
     const initialPointerState = await page.evaluate(() => ({
