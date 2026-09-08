@@ -1,21 +1,11 @@
 ---
 import SiteLayout from '../layouts/SiteLayout.astro';
 ---
-<SiteLayout title="Message — MyDev" description="给 Yuinen 留下一条私人消息。">
-  <header class="page-head contact-head"><p class="eyebrow"><span class="pulse"></span> Secure channel / Local draft</p><h1>Leave a signal.</h1><p>告诉我你正在构思的想法、希望解决的问题，或可能的合作方向。当前预览版只会将内容保存在你的设备上，服务端投递功能即将接入。</p></header>
-  <section class="contact-shell" aria-labelledby="message-form-title">
-    <aside class="contact-aside"><p class="panel-label">CHANNEL_STATUS</p><dl><div><dt>Mode</dt><dd>Local draft</dd></div><div><dt>Encryption</dt><dd>Device storage</dd></div><div><dt>Response</dt><dd>Not transmitted</dd></div></dl><p class="contact-note">不会唤起邮件客户端；在当前预览版中，任何内容都不会离开你的浏览器。</p></aside>
-    <form class="message-form" id="message-form"><h2 id="message-form-title">Compose message</h2><label>Name<input name="name" autocomplete="name" maxlength="80" required /></label><label>How can I reach you?<input name="contact" autocomplete="email" maxlength="160" required /></label><label>Message<textarea name="message" rows="7" maxlength="2000" required></textarea></label><div class="form-actions"><button type="submit">Save message draft <span>↗</span></button><span class="char-state">LOCAL_ONLY // 2000 MAX</span></div><p class="form-status" role="status" aria-live="polite"></p></form>
+<SiteLayout title="Guestbook — MyDev" description="通过 GitHub 加入 MyDev 公开留言板。">
+  <header class="page-head contact-head"><p class="eyebrow"><span class="pulse"></span> Public channel / GitHub Discussions</p><h1>Leave a signal.</h1><p>使用 GitHub 账号登录后即可公开留言、回复讨论或留下表情。所有内容都会同步保存在 MyDev 的 GitHub Discussions 中。</p></header>
+  <section class="guestbook-shell" aria-labelledby="guestbook-title">
+    <aside class="contact-aside"><p class="panel-label">CHANNEL_STATUS</p><dl><div><dt>Visibility</dt><dd>Public</dd></div><div><dt>Identity</dt><dd>GitHub</dd></div><div><dt>Storage</dt><dd>Discussions #1</dd></div></dl><p class="contact-note">留言将公开显示。请勿发布密码、Token、邮箱、电话号码或其他敏感信息。</p><a class="discussion-link" href="https://github.com/reuien/mydev-discussions/discussions/1">在 GitHub 中查看 ↗</a></aside>
+    <article class="guestbook-panel"><div class="guestbook-intro"><div><p class="panel-label">LIVE_THREAD_01</p><h2 id="guestbook-title">Public guestbook</h2></div><span>GITHUB AUTH</span></div><p class="guestbook-help">登录后可以发表新留言，也可以回复和回应其他访客。首次使用时，GitHub 会要求你授权 Giscus 代表你发布评论。</p><div class="giscus"></div><noscript><p class="contact-note">请启用 JavaScript，或直接前往 <a href="https://github.com/reuien/mydev-discussions/discussions/1">GitHub Discussion</a> 参与留言。</p></noscript></article>
   </section>
 </SiteLayout>
-<script>
-  const form = document.querySelector<HTMLFormElement>('#message-form');
-  const status = form?.querySelector<HTMLElement>('[role="status"]');
-  form?.addEventListener('submit', (event) => {
-    event.preventDefault();
-    if (!form.reportValidity()) return;
-    const values = Object.fromEntries(new FormData(form));
-    localStorage.setItem('mydev-message-draft', JSON.stringify(values));
-    if (status) status.textContent = '草稿已保存在此设备上，当前尚未发送。';
-  });
-</script>
+<script is:inline src="https://giscus.app/client.js" data-repo="reuien/mydev-discussions" data-repo-id="R_kgDOUR664w" data-mapping="number" data-term="1" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="dark" data-lang="zh-CN" crossorigin="anonymous" async></script>
