@@ -1,6 +1,7 @@
 <div class="cosmic-backdrop" data-cosmic-backdrop aria-hidden="true">
   <div class="aurora aurora-primary"></div>
   <div class="aurora aurora-secondary"></div>
+  <div class="pointer-echo"></div>
   <canvas data-meteor-field></canvas>
 </div>
 
@@ -76,8 +77,8 @@
 
       for (const star of stars) {
         const shimmer = reducedMotion.matches ? 1 : 0.72 + Math.sin(time * 0.0008 + star.phase) * 0.28;
-        const x = star.x + pointerX * star.depth * 15;
-        const y = star.y + pointerY * star.depth * 10;
+        const x = star.x + pointerX * star.depth * 42;
+        const y = star.y + pointerY * star.depth * 28;
         context.beginPath();
         context.fillStyle = `rgba(159, 235, 255, ${star.alpha * shimmer})`;
         context.arc(x, y, star.radius, 0, Math.PI * 2);
@@ -125,10 +126,12 @@
     const updatePointer = (event: PointerEvent) => {
       targetX = event.clientX / width - 0.5;
       targetY = event.clientY / height - 0.5;
-      backdrop.style.setProperty('--pointer-x', `${targetX * 24}px`);
-      backdrop.style.setProperty('--pointer-y', `${targetY * 16}px`);
-      backdrop.style.setProperty('--pointer-x-reverse', `${targetX * -14.4}px`);
-      backdrop.style.setProperty('--pointer-y-reverse', `${targetY * -9.6}px`);
+      backdrop.style.setProperty('--pointer-x', `${targetX * 46}px`);
+      backdrop.style.setProperty('--pointer-y', `${targetY * 32}px`);
+      backdrop.style.setProperty('--pointer-x-reverse', `${targetX * -28}px`);
+      backdrop.style.setProperty('--pointer-y-reverse', `${targetY * -20}px`);
+      backdrop.style.setProperty('--cursor-x', `${event.clientX}px`);
+      backdrop.style.setProperty('--cursor-y', `${event.clientY}px`);
     };
 
     const handleVisibility = () => {

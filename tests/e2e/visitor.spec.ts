@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-test('visitor can understand and navigate the portfolio', async ({ page }) => {
+test('visitor can understand and navigate the portfolio', async ({ page }, testInfo) => {
   await page.goto('/');
   const backdrop = page.locator('[data-cosmic-backdrop]');
   await expect(backdrop).toHaveAttribute('aria-hidden', 'true');
@@ -16,7 +16,30 @@ test('visitor can understand and navigate the portfolio', async ({ page }) => {
   await expect(page.getByRole('navigation', { name: 'System commands' })).toBeVisible();
   await expect(page.getByRole('region', { name: 'System status' })).toBeVisible();
   await expect(page.getByRole('region', { name: 'Activity stream' })).toBeVisible();
-  await expect(page.locator('[data-system-topology]')).toHaveCount(1);
+  const topology = page.locator('[data-system-topology]');
+  await expect(topology).toHaveCount(1);
+  if (testInfo.project.name === 'chromium') {
+    await page.mouse.move(80, 120);
+    const initialPointerState = await page.evaluate(() => ({
+      backdrop: getComputedStyle(document.querySelector<HTMLElement>('[data-cosmic-backdrop]')!).getPropertyValue('--pointer-x'),
+      topology: getComputedStyle(document.querySelector<HTMLElement>('[data-system-topology]')!).getPropertyValue('--topology-ry'),
+    }));
+    await page.mouse.move(1100, 620);
+    await expect
+      .poll(() =>
+        page.evaluate(() =>
+          getComputedStyle(document.querySelector<HTMLElement>('[data-cosmic-backdrop]')!).getPropertyValue('--pointer-x'),
+        ),
+      )
+      .not.toBe(initialPointerState.backdrop);
+    await expect
+      .poll(() =>
+        page.evaluate(() =>
+          getComputedStyle(document.querySelector<HTMLElement>('[data-system-topology]')!).getPropertyValue('--topology-ry'),
+        ),
+      )
+      .not.toBe(initialPointerState.topology);
+  }
   await expect(page.getByRole('link', { name: 'Projects', exact: true })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Writing', exact: true })).toBeVisible();
   await expect(page.getByRole('link', { name: /Message/ })).toHaveAttribute('href', '/contact');
