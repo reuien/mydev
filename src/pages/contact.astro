@@ -1,10 +1,10 @@
 ---
 import SiteLayout from '../layouts/SiteLayout.astro';
 ---
-<SiteLayout title="Message — MyDev" description="Leave a private message for Yuinen.">
-  <header class="page-head contact-head"><p class="eyebrow"><span class="pulse"></span> Secure channel / Local draft</p><h1>Leave a signal.</h1><p>Share the idea, problem, or collaboration you have in mind. This preview saves your note only on this device; server delivery is coming next.</p></header>
+<SiteLayout title="Message — MyDev" description="给 Yuinen 留下一条私人消息。">
+  <header class="page-head contact-head"><p class="eyebrow"><span class="pulse"></span> Secure channel / Local draft</p><h1>Leave a signal.</h1><p>告诉我你正在构思的想法、希望解决的问题，或可能的合作方向。当前预览版只会将内容保存在你的设备上，服务端投递功能即将接入。</p></header>
   <section class="contact-shell" aria-labelledby="message-form-title">
-    <aside class="contact-aside"><p class="panel-label">CHANNEL_STATUS</p><dl><div><dt>Mode</dt><dd>Local draft</dd></div><div><dt>Encryption</dt><dd>Device storage</dd></div><div><dt>Response</dt><dd>Not transmitted</dd></div></dl><p class="contact-note">No email client will open. Nothing leaves your browser in this preview.</p></aside>
+    <aside class="contact-aside"><p class="panel-label">CHANNEL_STATUS</p><dl><div><dt>Mode</dt><dd>Local draft</dd></div><div><dt>Encryption</dt><dd>Device storage</dd></div><div><dt>Response</dt><dd>Not transmitted</dd></div></dl><p class="contact-note">不会唤起邮件客户端；在当前预览版中，任何内容都不会离开你的浏览器。</p></aside>
     <form class="message-form" id="message-form"><h2 id="message-form-title">Compose message</h2><label>Name<input name="name" autocomplete="name" maxlength="80" required /></label><label>How can I reach you?<input name="contact" autocomplete="email" maxlength="160" required /></label><label>Message<textarea name="message" rows="7" maxlength="2000" required></textarea></label><div class="form-actions"><button type="submit">Save message draft <span>↗</span></button><span class="char-state">LOCAL_ONLY // 2000 MAX</span></div><p class="form-status" role="status" aria-live="polite"></p></form>
   </section>
 </SiteLayout>
@@ -16,6 +16,6 @@ import SiteLayout from '../layouts/SiteLayout.astro';
     if (!form.reportValidity()) return;
     const values = Object.fromEntries(new FormData(form));
     localStorage.setItem('mydev-message-draft', JSON.stringify(values));
-    if (status) status.textContent = 'Draft saved on this device. It has not been transmitted yet.';
+    if (status) status.textContent = '草稿已保存在此设备上，当前尚未发送。';
   });
 </script>
