@@ -21,10 +21,11 @@ const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin);
   </head>
   <body>
     <a class="skip-link" href="#content">Skip to content</a>
+    <div class="ambient" aria-hidden="true"><span></span><span></span><span></span></div>
     <Header />
     <main id="content"><slot /></main>
     <footer class="site-footer frame">
-      <span>MYDEV / BUILT IN THE OPEN</span><span>{new Date().getUTCFullYear()}</span>
+      <span><i></i> SYSTEM ONLINE</span><span>MYDEV // {new Date().getUTCFullYear()}</span>
     </footer>
   </body>
 </html>

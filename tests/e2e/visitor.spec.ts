@@ -5,7 +5,8 @@ test('visitor can understand and navigate the portfolio', async ({ page }) => {
   await expect(page.getByRole('heading', { name: /Build/ })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Projects', exact: true })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Writing', exact: true })).toBeVisible();
-  await expect(page.getByText('hello@mydev.dev')).toBeVisible();
+  await expect(page.getByRole('link', { name: /Message/ })).toHaveAttribute('href', '/contact');
+  await expect(page.locator('a[href^="mailto:"]')).toHaveCount(0);
 
   await page.getByRole('link', { name: 'About', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'About' })).toBeVisible();
@@ -13,6 +14,17 @@ test('visitor can understand and navigate the portfolio', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Projects' })).toBeVisible();
   await page.goto('/blog');
   await expect(page.getByRole('heading', { name: 'Writing' })).toBeVisible();
+});
+
+test('visitor can leave a message draft without opening an email client', async ({ page }) => {
+  await page.goto('/contact');
+  await expect(page.getByRole('heading', { name: 'Leave a signal.' })).toBeVisible();
+  await page.getByLabel('Name').fill('Ada');
+  await page.getByLabel('How can I reach you?').fill('ada@example.com');
+  await page.getByRole('textbox', { name: 'Message', exact: true }).fill('I would like to discuss a new product.');
+  await page.getByRole('button', { name: 'Save message draft' }).click();
+  await expect(page.getByRole('status')).toContainText('saved on this device');
+  await expect(page.locator('a[href^="mailto:"]')).toHaveCount(0);
 });
 
 test('unknown pages render a navigable custom 404', async ({ page }) => {

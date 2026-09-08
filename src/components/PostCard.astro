@@ -6,5 +6,5 @@ const { post, index = 0 } = Astro.props;
 <article class="card post-card">
   <span class="card-index">{String(index + 1).padStart(2, '0')}</span>
   <div><p class="eyebrow">{post.publishedAt?.slice(0, 10)}</p><h3><a href={`/blog/${post.slug}`}>{post.title}</a></h3><p>{post.excerpt}</p></div>
-  <a class="arrow-link" href={`/blog/${post.slug}`} aria-label={`Read ${post.title}`}>↗</a>
+  <a class="arrow-link" href={`/blog/${post.slug}`} aria-label={`Read ${post.title}`}>OPEN ↗</a>
 </article>

@@ -2,4 +2,4 @@
 import { author } from '../config/author';
 import SiteLayout from '../layouts/SiteLayout.astro';
 ---
-<SiteLayout title="About — MyDev" description={author.intro}><header class="page-head"><p class="eyebrow">Profile / Practice</p><h1>About</h1><p>{author.intro}</p></header><section class="prose">{author.about.map((paragraph)=><p>{paragraph}</p>)}<h2>Current focus</h2><ul>{author.focus.map((item)=><li>{item}</li>)}</ul><h2>Elsewhere</h2><p>{author.links.map((link)=><a href={link.href}>{link.label} ↗</a>)}</p><p><a href={`mailto:${author.email}`}>{author.email}</a></p></section></SiteLayout>
+<SiteLayout title="About — MyDev" description={author.intro}><header class="page-head"><p class="eyebrow">Profile / Practice</p><h1>About</h1><p>{author.intro}</p></header><section class="prose">{author.about.map((paragraph)=><p>{paragraph}</p>)}<h2>Current focus</h2><ul>{author.focus.map((item)=><li>{item}</li>)}</ul><h2>Elsewhere</h2><p>{author.links.map((link)=><a href={link.href}>{link.label} ↗</a>)}</p><p><a class="signal-button" href="/contact">Leave a message ↗</a></p></section></SiteLayout>

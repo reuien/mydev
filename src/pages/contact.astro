@@ -1,0 +1,21 @@
+---
+import SiteLayout from '../layouts/SiteLayout.astro';
+---
+<SiteLayout title="Message — MyDev" description="Leave a private message for Yuinen.">
+  <header class="page-head contact-head"><p class="eyebrow"><span class="pulse"></span> Secure channel / Local draft</p><h1>Leave a signal.</h1><p>Share the idea, problem, or collaboration you have in mind. This preview saves your note only on this device; server delivery is coming next.</p></header>
+  <section class="contact-shell" aria-labelledby="message-form-title">
+    <aside class="contact-aside"><p class="panel-label">CHANNEL_STATUS</p><dl><div><dt>Mode</dt><dd>Local draft</dd></div><div><dt>Encryption</dt><dd>Device storage</dd></div><div><dt>Response</dt><dd>Not transmitted</dd></div></dl><p class="contact-note">No email client will open. Nothing leaves your browser in this preview.</p></aside>
+    <form class="message-form" id="message-form"><h2 id="message-form-title">Compose message</h2><label>Name<input name="name" autocomplete="name" maxlength="80" required /></label><label>How can I reach you?<input name="contact" autocomplete="email" maxlength="160" required /></label><label>Message<textarea name="message" rows="7" maxlength="2000" required></textarea></label><div class="form-actions"><button type="submit">Save message draft <span>↗</span></button><span class="char-state">LOCAL_ONLY // 2000 MAX</span></div><p class="form-status" role="status" aria-live="polite"></p></form>
+  </section>
+</SiteLayout>
+<script>
+  const form = document.querySelector<HTMLFormElement>('#message-form');
+  const status = form?.querySelector<HTMLElement>('[role="status"]');
+  form?.addEventListener('submit', (event) => {
+    event.preventDefault();
+    if (!form.reportValidity()) return;
+    const values = Object.fromEntries(new FormData(form));
+    localStorage.setItem('mydev-message-draft', JSON.stringify(values));
+    if (status) status.textContent = 'Draft saved on this device. It has not been transmitted yet.';
+  });
+</script>
