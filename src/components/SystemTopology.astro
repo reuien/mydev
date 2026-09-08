@@ -17,22 +17,15 @@
       <path d="M40 100H600M40 180H600M40 260H600M40 340H600M40 420H600" />
       <path d="M80 60V460M200 60V460M320 60V460M440 60V460M560 60V460" />
     </g>
-    <g class="topology-auto-rotor" data-topology-rotor>
-      <g class="topology-pointer-rotor">
-        <g class="topology-orbits">
-          <ellipse cx="320" cy="260" rx="224" ry="112" />
-          <ellipse cx="320" cy="260" rx="158" ry="212" transform="rotate(58 320 260)" />
-          <circle cx="320" cy="260" r="72" />
-        </g>
-        <g class="topology-links">
-          <path d="M320 260L154 160L494 118L530 350L218 414Z" />
-          <path d="M154 160L530 350M494 118L218 414" />
-        </g>
-        <g class="topology-node node-1" transform="translate(154 160)"><circle r="7" /><text x="14" y="4">PROJECTS</text></g>
-        <g class="topology-node node-2" transform="translate(494 118)"><circle r="7" /><text x="-14" y="-13" text-anchor="end">WRITING</text></g>
-        <g class="topology-node node-3" transform="translate(530 350)"><circle r="7" /><text x="-14" y="4" text-anchor="end">ABOUT</text></g>
-        <g class="topology-node node-4" transform="translate(218 414)"><circle r="7" /><text x="14" y="4">GUESTBOOK</text></g>
-      </g>
+    <g class="topology-orbits" data-topology-orbits>
+      <ellipse cx="320" cy="260" rx="224" ry="112" />
+      <ellipse cx="320" cy="260" rx="158" ry="212" transform="rotate(58 320 260)" />
+      <circle cx="320" cy="260" r="72" />
+    </g>
+    <g class="topology-links">
+      <path data-topology-polygon d="M320 260L154 160L494 118L530 350L218 414Z" />
+      <path data-topology-cross-a d="M154 160L530 350" />
+      <path data-topology-cross-b d="M494 118L218 414" />
     </g>
     <g class="topology-core">
       <circle cx="320" cy="260" r="88" fill="url(#core-glow)" />
@@ -40,6 +33,10 @@
       <circle class="core-pulse" cx="320" cy="260" r="20" />
       <text x="320" y="292" text-anchor="middle">REUIEN / ROOT</text>
     </g>
+    <g class="topology-node node-1" data-topology-node data-x="154" data-y="160" data-depth="1" transform="translate(154 160)"><circle r="7" /><text x="14" y="4">PROJECTS</text></g>
+    <g class="topology-node node-2" data-topology-node data-x="494" data-y="118" data-depth="-0.72" transform="translate(494 118)"><circle r="7" /><text x="-14" y="-13" text-anchor="end">WRITING</text></g>
+    <g class="topology-node node-3" data-topology-node data-x="530" data-y="350" data-depth="0.58" transform="translate(530 350)"><circle r="7" /><text x="-14" y="4" text-anchor="end">ABOUT</text></g>
+    <g class="topology-node node-4" data-topology-node data-x="218" data-y="414" data-depth="-1.1" transform="translate(218 414)"><circle r="7" /><text x="14" y="4">GUESTBOOK</text></g>
     <path class="signal-scan" d="M62 260H578" stroke="url(#signal-line)" />
   </svg>
   <div class="topology-axis"><span>X 121.4737</span><span>Y 31.2304</span></div>
@@ -49,15 +46,61 @@
   const topology = document.querySelector<HTMLElement>('[data-system-topology]');
   if (topology) {
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const nodes = Array.from(topology.querySelectorAll<SVGGElement>('[data-topology-node]')).map((element) => ({
+      element,
+      x: Number(element.dataset.x),
+      y: Number(element.dataset.y),
+      depth: Number(element.dataset.depth),
+    }));
+    const orbitLayer = topology.querySelector<SVGGElement>('[data-topology-orbits]');
+    const polygon = topology.querySelector<SVGPathElement>('[data-topology-polygon]');
+    const crossA = topology.querySelector<SVGPathElement>('[data-topology-cross-a]');
+    const crossB = topology.querySelector<SVGPathElement>('[data-topology-cross-b]');
+    let currentX = 0;
+    let currentY = 0;
+    let targetX = 0;
+    let targetY = 0;
+    let frame = 0;
+
+    const renderNodes = () => {
+      currentX += (targetX - currentX) * 0.09;
+      currentY += (targetY - currentY) * 0.09;
+      const positions = nodes.map((node) => {
+        const relativeX = node.x - 320;
+        const relativeY = node.y - 260;
+        const angle = currentX * node.depth * 0.3 + currentY * node.depth * 0.08;
+        const cosine = Math.cos(angle);
+        const sine = Math.sin(angle);
+        const x = 320 + relativeX * cosine - relativeY * sine + currentX * node.depth * 18;
+        const y = 260 + relativeX * sine + relativeY * cosine + currentY * node.depth * 16;
+        node.element.setAttribute('transform', `translate(${x.toFixed(2)} ${y.toFixed(2)})`);
+        return { x, y };
+      });
+
+      if (positions.length === 4) {
+        polygon?.setAttribute(
+          'd',
+          `M320 260L${positions.map(({ x, y }) => `${x.toFixed(2)} ${y.toFixed(2)}`).join('L')}Z`,
+        );
+        crossA?.setAttribute('d', `M${positions[0].x.toFixed(2)} ${positions[0].y.toFixed(2)}L${positions[2].x.toFixed(2)} ${positions[2].y.toFixed(2)}`);
+        crossB?.setAttribute('d', `M${positions[1].x.toFixed(2)} ${positions[1].y.toFixed(2)}L${positions[3].x.toFixed(2)} ${positions[3].y.toFixed(2)}`);
+      }
+
+      if (orbitLayer) {
+        orbitLayer.style.transform = `rotate(${(currentX * 8).toFixed(2)}deg) scale(${(1 + currentX * 0.035).toFixed(3)}, ${(1 + currentY * 0.075).toFixed(3)})`;
+      }
+
+      if (Math.abs(targetX - currentX) > 0.001 || Math.abs(targetY - currentY) > 0.001) {
+        frame = requestAnimationFrame(renderNodes);
+      }
+    };
+
     const updateView = (event: PointerEvent) => {
       if (reducedMotion.matches) return;
-      const x = event.clientX / window.innerWidth - 0.5;
-      const y = event.clientY / window.innerHeight - 0.5;
-      topology.style.setProperty('--topology-x', `${x * 30}px`);
-      topology.style.setProperty('--topology-y', `${y * 22}px`);
-      topology.style.setProperty('--topology-rx', `${y * -9}deg`);
-      topology.style.setProperty('--topology-ry', `${x * 12}deg`);
-      topology.style.setProperty('--topology-spin', `${x * 34}deg`);
+      targetX = event.clientX / window.innerWidth - 0.5;
+      targetY = event.clientY / window.innerHeight - 0.5;
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(renderNodes);
     };
     window.addEventListener('pointermove', updateView, { passive: true });
   }

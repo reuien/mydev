@@ -18,17 +18,15 @@ test('visitor can understand and navigate the portfolio', async ({ page }, testI
   await expect(page.getByRole('region', { name: 'Activity stream' })).toBeVisible();
   const topology = page.locator('[data-system-topology]');
   await expect(topology).toHaveCount(1);
-  const topologyRotor = topology.locator('[data-topology-rotor]');
-  await expect(topologyRotor).toHaveCount(1);
-  const initialRotorTransform = await topologyRotor.evaluate((element) => getComputedStyle(element).transform);
-  await expect
-    .poll(() => topologyRotor.evaluate((element) => getComputedStyle(element).transform))
-    .not.toBe(initialRotorTransform);
+  const topologyNode = topology.locator('[data-topology-node]').first();
+  const topologyCore = topology.locator('.topology-core');
+  await expect(topologyNode).toHaveCount(1);
   if (testInfo.project.name === 'chromium') {
     await page.mouse.move(80, 120);
     const initialPointerState = await page.evaluate(() => ({
       backdrop: getComputedStyle(document.querySelector<HTMLElement>('[data-cosmic-backdrop]')!).getPropertyValue('--pointer-x'),
-      topology: getComputedStyle(document.querySelector<HTMLElement>('[data-system-topology]')!).getPropertyValue('--topology-ry'),
+      node: document.querySelector('[data-topology-node]')?.getAttribute('transform'),
+      core: document.querySelector('.topology-core')?.getAttribute('transform'),
     }));
     await page.mouse.move(1100, 620);
     await expect
@@ -40,11 +38,10 @@ test('visitor can understand and navigate the portfolio', async ({ page }, testI
       .not.toBe(initialPointerState.backdrop);
     await expect
       .poll(() =>
-        page.evaluate(() =>
-          getComputedStyle(document.querySelector<HTMLElement>('[data-system-topology]')!).getPropertyValue('--topology-ry'),
-        ),
+        page.evaluate(() => document.querySelector('[data-topology-node]')?.getAttribute('transform')),
       )
-      .not.toBe(initialPointerState.topology);
+      .not.toBe(initialPointerState.node);
+    expect(await topologyCore.getAttribute('transform')).toBe(initialPointerState.core);
   }
   await expect(page.getByRole('link', { name: 'Projects', exact: true })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Writing', exact: true })).toBeVisible();
