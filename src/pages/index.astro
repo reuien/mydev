@@ -1,18 +1,71 @@
 ---
 import { env } from 'cloudflare:workers';
-import PostCard from '../components/PostCard.astro';
-import ProjectCard from '../components/ProjectCard.astro';
+import SystemTopology from '../components/SystemTopology.astro';
 import { author } from '../config/author';
 import { createServicesFromEnvironment } from '../http/context';
 import SiteLayout from '../layouts/SiteLayout.astro';
 const services = createServicesFromEnvironment(env);
-const [projects, posts] = await Promise.all([services.projects.listPublic(), services.posts.listPublic({ limit: 3, offset: 0 })]);
+const [projects, posts] = await Promise.all([services.projects.listPublic(), services.posts.listPublic({ limit: 1, offset: 0 })]);
+const latestProject = projects[0];
+const latestPost = posts.items[0];
 ---
 <SiteLayout description={author.intro}>
-  <section class="hero">
-    <div class="hero-main"><p class="eyebrow"><span class="pulse"></span> Independent developer / Shanghai</p><h1>Build.<br/>Explain.<br/><span>Refine.</span></h1><div class="hero-coordinates" aria-hidden="true">31.2304° N&nbsp;&nbsp;121.4737° E&nbsp;&nbsp;//&nbsp;&nbsp;UTC+08</div></div>
-    <div class="hero-copy"><span class="panel-label">PROFILE_01</span><p>{author.intro}</p><a class="signal-button" href="/contact">Leave a message <span>↗</span></a></div>
-  </section>
-  <section class="section" aria-labelledby="projects-title"><div class="section-heading"><div><p class="eyebrow">01 / Selected work</p><h2 id="projects-title">Projects</h2></div><a href="/projects">View all ↗</a></div>{projects.length ? projects.slice(0,3).map((project,index)=><ProjectCard {project} {index}/>) : <p class="empty"><span>NO_DATA</span> 项目档案正在整理中。</p>}</section>
-  <section class="section" aria-labelledby="writing-title"><div class="section-heading"><div><p class="eyebrow">02 / Field notes</p><h2 id="writing-title">Writing</h2></div><a href="/blog">View all ↗</a></div>{posts.items.length ? posts.items.map((post,index)=><PostCard {post} {index}/>) : <p class="empty"><span>NO_DATA</span> 第一篇文章正在撰写中。</p>}</section>
+  <div class="terminal-home">
+    <div class="boot-sequence" aria-hidden="true">
+      <span><i></i> SESSION ESTABLISHED</span><span>KERNEL 01.26</span><span>LOCAL / UTC+08</span>
+    </div>
+
+    <div class="os-workbench">
+      <aside class="command-deck">
+        <div class="deck-identity"><span>MYDEV_OS</span><strong>01</strong></div>
+        <p class="deck-label">AVAILABLE COMMANDS</p>
+        <nav class="system-commands" aria-label="System commands">
+          <a href="/projects" aria-label="Open Projects"><span>01</span><strong>PROJECTS</strong><small>项目实验舱</small></a>
+          <a href="/blog" aria-label="Open Writing"><span>02</span><strong>WRITING</strong><small>开发与研究日志</small></a>
+          <a href="/about" aria-label="Open About"><span>03</span><strong>ABOUT</strong><small>身份与工作方式</small></a>
+          <a href="/contact" aria-label="Open Guestbook"><span>04</span><strong>GUESTBOOK</strong><small>接收外部信号</small></a>
+        </nav>
+        <div class="deck-footer"><span>ACCESS</span><span>PUBLIC</span></div>
+      </aside>
+
+      <section class="os-workspace" aria-labelledby="home-title">
+        <div class="workspace-copy">
+          <p class="eyebrow"><span class="pulse"></span> Independent developer / Shanghai</p>
+          <h1 id="home-title">Build systems<br/>that explain<br/><span>themselves.</span></h1>
+          <p class="workspace-intro">构建清晰、可靠、能够说明自身设计逻辑的软件系统。这里既是个人开发空间，也是持续迭代的公开实验。</p>
+        </div>
+        <SystemTopology />
+        <div class="workspace-action"><span>ROOT@MYDEV:~$</span><a href="/projects">EXPLORE WORKSPACE <b>↗</b></a></div>
+      </section>
+
+      <aside class="system-status" role="region" aria-label="System status">
+        <div class="status-heading"><span>SYSTEM STATUS</span><i>ONLINE</i></div>
+        <dl>
+          <div><dt>OPERATOR</dt><dd>{author.name}</dd></div>
+          <div><dt>LOCATION</dt><dd>SHANGHAI</dd></div>
+          <div><dt>PROJECTS</dt><dd>{String(projects.length).padStart(2, '0')}</dd></div>
+          <div><dt>WRITING</dt><dd>{String(posts.total).padStart(2, '0')}</dd></div>
+          <div><dt>COLLAB</dt><dd class="status-ready">AVAILABLE</dd></div>
+        </dl>
+        <div class="focus-module">
+          <span>CURRENT FOCUS</span>
+          <ul>{author.focus.map((item, index) => <li><i>{String(index + 1).padStart(2, '0')}</i>{item}</li>)}</ul>
+        </div>
+        <a class="status-link" href="/about">OPEN FULL PROFILE <span>→</span></a>
+      </aside>
+    </div>
+
+    <section class="activity-stream" aria-label="Activity stream">
+      <header><span>ACTIVITY STREAM</span><i>LIVE INDEX</i></header>
+      <div class="activity-grid">
+        <a href={latestProject ? `/projects/${latestProject.slug}` : '/projects'}>
+          <span>PROJECT / LATEST</span><strong>{latestProject?.name ?? '档案同步中'}</strong><small>{latestProject?.summary ?? '项目记录将在发布后出现在这里。'}</small><b>↗</b>
+        </a>
+        <a href={latestPost ? `/blog/${latestPost.slug}` : '/blog'}>
+          <span>WRITING / LATEST</span><strong>{latestPost?.title ?? '日志同步中'}</strong><small>{latestPost?.excerpt ?? '文章发布后，这里将显示最新研究日志。'}</small><b>↗</b>
+        </a>
+        <a href="/contact"><span>EXTERNAL SIGNAL</span><strong>Leave a trace.</strong><small>使用 GitHub 账号在公开留言板留下消息。</small><b>↗</b></a>
+      </div>
+    </section>
+  </div>
 </SiteLayout>

@@ -12,8 +12,11 @@ test('visitor can understand and navigate the portfolio', async ({ page }) => {
   await expect
     .poll(() => aurora.evaluate((element) => getComputedStyle(element).transform))
     .not.toBe(initialTransform);
-  await expect(page.getByRole('heading', { name: /Build/ })).toBeVisible();
-  await expect(page.locator('.hero-copy p')).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Build systems/i })).toBeVisible();
+  await expect(page.getByRole('navigation', { name: 'System commands' })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'System status' })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Activity stream' })).toBeVisible();
+  await expect(page.locator('[data-system-topology]')).toHaveCount(1);
   await expect(page.getByRole('link', { name: 'Projects', exact: true })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Writing', exact: true })).toBeVisible();
   await expect(page.getByRole('link', { name: /Message/ })).toHaveAttribute('href', '/contact');
