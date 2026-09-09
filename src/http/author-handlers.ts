@@ -121,7 +121,9 @@ export function transitionAuthorPost(
 ): Promise<Response> {
   return authorize(request, context, async (requestId) => {
     if (!validId(id)) return errorResponse(404, 'NOT_FOUND', '内容不存在', requestId);
-    if (request.body !== null) return errorResponse(400, 'VALIDATION_ERROR', '状态操作不接受请求体', requestId);
+    if ((await request.text()).length > 0) {
+      return errorResponse(400, 'VALIDATION_ERROR', '状态操作不接受请求体', requestId);
+    }
     const post = target === 'published' ? await context.posts.publish(id) : await context.posts.unpublish(id);
     return post ? authorSuccessResponse(post, requestId) : errorResponse(404, 'NOT_FOUND', '内容不存在', requestId);
   });

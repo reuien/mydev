@@ -54,6 +54,14 @@ function request(path: string, options: { method?: string; body?: unknown; token
   });
 }
 
+function emptyBodyRequest(path: string, token: string) {
+  return new Request(`https://example.com${path}`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: new Uint8Array(0),
+  });
+}
+
 describe('author API', () => {
   let database: SqliteTestDatabase;
   let context: AuthorHandlerContext;
@@ -138,7 +146,7 @@ describe('author API', () => {
       POST_ID,
     );
     const publish = await transitionAuthorPost(
-      request(`/api/author/posts/${POST_ID}/publish`, { token: TOKEN }),
+      emptyBodyRequest(`/api/author/posts/${POST_ID}/publish`, TOKEN),
       context,
       POST_ID,
       'published',
