@@ -1,10 +1,61 @@
-docs/
+# Dependencies
+node_modules/
+
+# Astro, Cloudflare and production build output
 .astro/
 .wrangler/
 dist/
-node_modules/
-playwright-report/
-test-results/
+
+# Local environment variables and Cloudflare development secrets
 .env*
 !.env.example
+.dev.vars*
+!.dev.vars.example
+
+# Local publishing state and databases
 .mydev-state.json
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+
+# Test and coverage output
+coverage/
+playwright-report/
+blob-report/
+test-results/
+
+# Logs and package-manager diagnostics
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# TypeScript and tool caches
+*.tsbuildinfo
+.cache/
+.parcel-cache/
+.turbo/
+.vite/
+.codebase-memory/
+
+# Editor and operating-system metadata
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Private keys, certificates and service-account credentials
+*.key
+*.pem
+*.p12
+*.pfx
+credentials*.json
+service-account*.json
+
+# Documentation is maintained as a separate nested Git repository.
+docs/

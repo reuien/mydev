@@ -6,7 +6,12 @@ import { resolveAstroCommand } from './src/config/astro-command';
 const astroCommand = resolveAstroCommand(process.argv);
 
 export default defineConfig({
-  adapter: cloudflare(),
+  adapter: cloudflare({
+    // This project does not use runtime image transforms.
+    imageService: 'passthrough',
+  }),
+  // Avoid provisioning a KV namespace when no page uses Astro sessions.
+  session: false,
   output: 'server',
   vite: {
     // Astro's commands can run concurrently while the background dev server is

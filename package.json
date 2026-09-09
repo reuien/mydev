@@ -9,6 +9,8 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
+    "deploy": "tsx scripts/check-deploy-config.ts && astro build && wrangler deploy",
+    "deploy:check": "tsx scripts/check-deploy-config.ts && astro build && wrangler deploy --dry-run",
     "publish": "tsx scripts/publish.ts",
     "preview": "astro preview",
     "typecheck": "astro check",
@@ -37,7 +39,7 @@
     "@cloudflare/workers-types": "latest",
     "@playwright/test": "latest",
     "@types/node": "latest",
-    "miniflare": "3.20250718.3",
+    "miniflare": "5.20260907.0-alpha",
     "tsx": "latest",
     "typescript": "^6.0.0",
     "vitest": "latest",
