@@ -8,9 +8,12 @@ import '../styles/cursor.css';
   let cursors: MouseFollower[] = [];
   let revision = 0;
   let stopTweens: (() => void) | undefined;
+  let stopTrail: (() => void) | undefined;
 
   function dispose() {
     revision++;
+    stopTrail?.();
+    stopTrail = undefined;
     stopTweens?.();
     stopTweens = undefined;
     cursors.forEach((cursor) => cursor.destroy());
@@ -32,12 +35,8 @@ import '../styles/cursor.css';
       class OpticalFollower extends Follower {
         render(force = false) { super.render(force || this.vel.x !== 0 || this.vel.y !== 0); }
       }
-      for (const [className, speed, skewing] of [
-        ['optical-cursor', 0.22, 1.6],
-        ['optical-cursor optical-echo', 0.48, 2.4],
-      ] as const) {
         const cursor = new OpticalFollower({
-          className, speed, skewing, skewingDeltaMax: 0.1,
+          className: 'optical-cursor', speed: 0.08, skewing: 0,
           dataAttr: null, hideTimeout: 120,
           stateDetection: {
             '-pointer': 'a, button, [role="button"]',
@@ -46,7 +45,76 @@ import '../styles/cursor.css';
         });
         cursor.el.setAttribute('aria-hidden', 'true');
         cursors.push(cursor);
-      }
+      const canvas = document.createElement('canvas');
+      canvas.className = 'comet-trail';
+      canvas.setAttribute('aria-hidden', 'true');
+      document.body.appendChild(canvas);
+      const context = canvas.getContext('2d');
+      let frame = 0;
+      let points: { x: number; y: number; time: number }[] = [];
+      let lastMove = -Infinity;
+      const lifetime = 360;
+      const resize = () => {
+        const ratio = Math.min(devicePixelRatio || 1, 1.5);
+        canvas.width = Math.round(innerWidth * ratio);
+        canvas.height = Math.round(innerHeight * ratio);
+        context?.setTransform(ratio, 0, 0, ratio, 0, 0);
+        points = [];
+      };
+      const draw = (time: number) => {
+        frame = 0;
+        if (!context) return;
+        context.clearRect(0, 0, innerWidth, innerHeight);
+        const hidden = cursor.el.classList.contains('-hidden');
+        const hovering = cursor.el.classList.contains('-pointer');
+        points = points.filter(point => time - point.time < lifetime);
+        if (hidden || hovering) points = [];
+        else if (time - lastMove < 140) {
+          const previous = points.at(-1);
+          if (!previous || Math.hypot(cursor.pos.x - previous.x, cursor.pos.y - previous.y) > 0.5) {
+            points.push({ x: cursor.pos.x, y: cursor.pos.y, time });
+            if (points.length > 64) points.shift();
+          }
+        }
+        context.lineCap = 'round';
+        for (let i = 1; i < points.length; i++) {
+          const a = points[i - 1];
+          const b = points[i];
+          const freshness = 1 - (time - a.time) / lifetime;
+          // Time-based history naturally leaves a longer wake at higher speed.
+          context.strokeStyle = `hsla(${265 - freshness * 50}, 95%, ${60 + freshness * 20}%, ${freshness * 0.75})`;
+          context.lineWidth = 0.5 + freshness * 2;
+          context.shadowColor = '#797bff';
+          context.shadowBlur = 9 * freshness;
+          context.beginPath();
+          context.moveTo(a.x, a.y);
+          context.lineTo(b.x, b.y);
+          context.stroke();
+        }
+        if (points.length || time - lastMove < lifetime) frame = requestAnimationFrame(draw);
+      };
+      const move = () => {
+        lastMove = performance.now();
+        if (!frame) frame = requestAnimationFrame(draw);
+      };
+      const clear = () => {
+        points = [];
+        lastMove = -Infinity;
+        cancelAnimationFrame(frame);
+        frame = 0;
+        context?.clearRect(0, 0, innerWidth, innerHeight);
+      };
+      resize();
+      document.documentElement.addEventListener('mousemove', move, { passive: true });
+      document.documentElement.addEventListener('mouseleave', clear);
+      window.addEventListener('resize', resize);
+      stopTrail = () => {
+        clear();
+        canvas.remove();
+        document.documentElement.removeEventListener('mousemove', move);
+        document.documentElement.removeEventListener('mouseleave', clear);
+        window.removeEventListener('resize', resize);
+      };
       stopTweens = () => cursors.forEach((cursor) => gsap.killTweensOf(cursor.pos));
     } catch {
       // Decoration must never prevent navigation or remove the native cursor.

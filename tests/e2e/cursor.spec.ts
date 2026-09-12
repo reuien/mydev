@@ -24,10 +24,29 @@ test('optical cursor follows both axes, reacts to links, and cleans up', async (
   await page.mouse.up();
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await expect(page.locator('.optical-cursor')).toHaveCount(0);
+  await expect(page.locator('.comet-trail')).toHaveCount(0);
   await page.emulateMedia({ reducedMotion: 'no-preference' });
-  await expect(page.locator('.optical-cursor')).toHaveCount(2);
+  await expect(page.locator('.optical-cursor')).toHaveCount(1);
   await page.reload();
-  await expect(page.locator('.optical-cursor')).toHaveCount(2);
+  await expect(page.locator('.optical-cursor')).toHaveCount(1);
+});
+
+test('comet wake appears on movement and clears after stopping', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name === 'mobile-chromium', 'Fine pointer enhancement only');
+  await page.goto('/');
+  const trail = page.locator('.comet-trail');
+  await expect(trail).toHaveCount(1);
+  const painted = () => trail.evaluate((canvas: HTMLCanvasElement) => {
+    const pixels = canvas.getContext('2d')!.getImageData(0, 0, canvas.width, canvas.height).data;
+    for (let i = 3; i < pixels.length; i += 4) if (pixels[i] > 0) return true;
+    return false;
+  });
+  await page.mouse.move(150, 250);
+  await page.mouse.move(750, 450, { steps: 24 });
+  await expect.poll(painted).toBe(true);
+  await expect.poll(painted).toBe(false);
+  await page.reload();
+  await expect(trail).toHaveCount(1);
 });
 
 test('reduced motion and touch retain native pointing', async ({ page }, testInfo) => {
