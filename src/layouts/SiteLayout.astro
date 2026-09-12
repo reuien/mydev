@@ -1,6 +1,7 @@
 ---
 import Header from '../components/Header.astro';
 import CosmicBackdrop from '../components/CosmicBackdrop.astro';
+import OpticalCursor from '../components/OpticalCursor.astro';
 import '../styles/global.css';
 
 interface Props { title?: string; description?: string }
@@ -8,7 +9,7 @@ const { title = 'MyDev', description = 'Yuinen 的项目、文章与开发实践
 const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin);
 ---
 <!doctype html>
-<html lang="en">
+<html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
@@ -23,6 +24,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin);
   <body>
     <a class="skip-link" href="#content">跳至主要内容</a>
     <CosmicBackdrop />
+    <OpticalCursor />
     <Header />
     <main id="content"><slot /></main>
     <footer class="site-footer frame">

@@ -1,7 +1,12 @@
+---
+const active = (path: string) => Astro.url.pathname === path || Astro.url.pathname.startsWith(path + '/');
+---
 <header class="site-header frame">
-  <a class="wordmark" href="/" aria-label="MyDev home"><span class="wordmark-bracket">[</span>M<span>／</span>D<span class="wordmark-bracket">]</span></a>
+  <a class="wordmark" href="/" aria-label="MyDev home"><span class="wordmark-symbol" aria-hidden="true">✳</span><span>MyDev<span class="wordmark-dot">.</span></span></a>
   <nav aria-label="Primary navigation">
-    <a href="/projects">Projects</a><a href="/blog">Writing</a><a href="/about">About</a>
+    <a href="/projects" aria-current={active('/projects') ? 'page' : undefined}>Projects</a>
+    <a href="/blog" aria-current={active('/blog') ? 'page' : undefined}>Writing</a>
+    <a href="/about" aria-current={active('/about') ? 'page' : undefined}>About</a>
   </nav>
-  <a class="contact-link" href="/contact"><span aria-hidden="true">●</span> Message</a>
+  <a class="contact-link" href="/contact" aria-current={active('/contact') ? 'page' : undefined}><span aria-hidden="true">●</span> Message</a>
 </header>

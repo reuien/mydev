@@ -5,6 +5,8 @@ test('visitor can understand and navigate the portfolio', async ({ page }, testI
   const backdrop = page.locator('[data-cosmic-backdrop]');
   await expect(backdrop).toHaveAttribute('aria-hidden', 'true');
   await expect(backdrop.locator('canvas')).toHaveCount(1);
+  // A rendered diagram is not enough: production CSP must allow its script to run.
+  await expect(backdrop).toHaveAttribute('data-ready', 'true');
   expect(await backdrop.evaluate((element) => getComputedStyle(element).pointerEvents)).toBe('none');
   const aurora = backdrop.locator('.aurora-primary');
   const initialTransform = await aurora.evaluate((element) => getComputedStyle(element).transform);
@@ -50,6 +52,7 @@ test('visitor can understand and navigate the portfolio', async ({ page }, testI
 
   await page.getByRole('link', { name: 'About', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'About' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'About', exact: true })).toHaveAttribute('aria-current', 'page');
   await page.goto('/projects');
   await expect(page.getByRole('heading', { name: 'Projects' })).toBeVisible();
   await page.goto('/blog');
@@ -89,4 +92,36 @@ test('mobile layout has no horizontal overflow', async ({ page }) => {
   await page.goto('/');
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
   expect(overflow).toBe(false);
+});
+
+test('homepage copy and topology fit narrow, tablet, and desktop screens', async ({ page }) => {
+  for (const width of [360, 768, 1440]) {
+    await page.setViewportSize({ width, height: 960 });
+    await page.goto('/');
+    const heading = page.getByRole('heading', { name: /Build systems/i });
+    await expect(heading).toBeVisible();
+    const copy = await page.locator('.workspace-copy').boundingBox();
+    const diagram = await page.locator('.topology-stage').boundingBox();
+    expect(copy).not.toBeNull();
+    expect(diagram).not.toBeNull();
+    expect(diagram!.x).toBeGreaterThanOrEqual(0);
+    expect(diagram!.x + diagram!.width).toBeLessThanOrEqual(width);
+    if (width > 720) {
+      expect(copy!.x + copy!.width).toBeLessThanOrEqual(diagram!.x);
+    } else {
+      expect(copy!.y + copy!.height).toBeLessThanOrEqual(diagram!.y);
+    }
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    await expect(page.getByRole('navigation', { name: 'System commands' }).getByRole('link')).toHaveCount(4);
+  }
+});
+
+test('reduced motion keeps the homepage readable without animated cues', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/');
+  await expect(page.getByText('节点相连，想法生长', { exact: true })).toBeVisible();
+  await expect(page.getByText('移动鼠标，探索节点之间的联系', { exact: true })).toBeHidden();
+  for (const selector of ['.aurora-primary', '.core-pulse', '.signal-scan']) {
+    expect(await page.locator(selector).evaluate((element) => getComputedStyle(element).animationName)).toBe('none');
+  }
 });

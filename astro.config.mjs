@@ -14,6 +14,11 @@ export default defineConfig({
   session: false,
   output: 'server',
   vite: {
+    // Keep interaction scripts as same-origin files so the site's CSP can load
+    // them in production too; Astro otherwise inlines small script bundles.
+    build: {
+      assetsInlineLimit: 0,
+    },
     // Astro's commands can run concurrently while the background dev server is
     // active. Separate their optimizer caches so check/build cannot invalidate
     // versioned SSR modules that the running Cloudflare worker still references.

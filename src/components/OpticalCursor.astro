@@ -1,0 +1,64 @@
+---
+import '../styles/cursor.css';
+---
+<script>
+  import type MouseFollower from 'mouse-follower';
+
+  const eligible = matchMedia('(hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)');
+  let cursors: MouseFollower[] = [];
+  let revision = 0;
+  let stopTweens: (() => void) | undefined;
+
+  function dispose() {
+    revision++;
+    stopTweens?.();
+    stopTweens = undefined;
+    cursors.forEach((cursor) => cursor.destroy());
+    cursors = [];
+  }
+
+  async function syncCursor() {
+    dispose();
+    if (!eligible.matches || document.hidden) return;
+    const current = revision;
+    try {
+      const [{ default: Follower }, { gsap }] = await Promise.all([
+        import('mouse-follower'), import('gsap'),
+      ]);
+      if (current !== revision || !eligible.matches || document.hidden) return;
+      Follower.registerGSAP(gsap);
+      // v1.2.1 skips rendering if either velocity axis is zero. Pure horizontal
+      // or vertical mouse movement must still update the follower position.
+      class OpticalFollower extends Follower {
+        render(force = false) { super.render(force || this.vel.x !== 0 || this.vel.y !== 0); }
+      }
+      for (const [className, speed, skewing] of [
+        ['optical-cursor', 0.22, 1.6],
+        ['optical-cursor optical-echo', 0.48, 2.4],
+      ] as const) {
+        const cursor = new OpticalFollower({
+          className, speed, skewing, skewingDeltaMax: 0.1,
+          dataAttr: null, hideTimeout: 120,
+          stateDetection: {
+            '-pointer': 'a, button, [role="button"]',
+            '-hidden': 'input, textarea, select, [contenteditable], iframe',
+          },
+        });
+        cursor.el.setAttribute('aria-hidden', 'true');
+        cursors.push(cursor);
+      }
+      stopTweens = () => cursors.forEach((cursor) => gsap.killTweensOf(cursor.pos));
+    } catch {
+      // Decoration must never prevent navigation or remove the native cursor.
+      dispose();
+    }
+  }
+
+  eligible.addEventListener('change', syncCursor);
+  document.addEventListener('visibilitychange', syncCursor);
+  document.addEventListener('astro:before-swap', dispose);
+  document.addEventListener('astro:page-load', syncCursor);
+  window.addEventListener('pagehide', dispose);
+  window.addEventListener('pageshow', syncCursor);
+  void syncCursor();
+</script>

@@ -1,0 +1,38 @@
+/* Cold-white optical core and cobalt afterimage; independent of site accents. */
+.optical-cursor {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  z-index: 1000;
+  pointer-events: none;
+  color: #e6f3ff;
+}
+.optical-cursor::before {
+  content: '';
+  position: absolute;
+  inset: -17px;
+  border: 1px solid rgb(209 233 255 / 85%);
+  border-radius: 50%;
+  background: radial-gradient(circle, transparent 45%, rgb(103 166 255 / 12%) 100%);
+  box-shadow: 0 0 12px rgb(122 177 255 / 25%), inset 0 0 8px rgb(122 177 255 / 12%);
+  transition: transform .22s ease, opacity .12s ease, background .22s ease;
+}
+.optical-cursor.-pointer::before {
+  transform: scale(1.65);
+  background: rgb(107 158 255 / 9%);
+}
+.optical-cursor.-active::before { transform: scale(.65); }
+.optical-echo::before {
+  inset: -23px;
+  border-color: rgb(108 148 255 / 30%);
+  border-style: dashed;
+  background: transparent;
+  box-shadow: 0 0 20px rgb(75 115 255 / 14%);
+}
+.optical-cursor.-hidden::before { opacity: 0; transform: scale(.25); }
+.optical-cursor .mf-cursor-inner { display: none; }
+@media (hover: none), (pointer: coarse), (prefers-reduced-motion: reduce) {
+  .optical-cursor { display: none; }
+}
