@@ -81,9 +81,7 @@ const fs = {
 
 终端里把这套色系反转：深底 #1C1F1B，墨绿提到 #8FB39A。`},
         }},
-        blog:{name:'blog',type:'dir',children:{
-          'welcome.md':{name:'welcome.md',type:'file',content:'# 欢迎来到我的博客\n\n这里记录软件、阅读和日常实验。'},
-        }},
+        blog:{name:'blog',type:'dir',children:{}},
       }},
     }},
     etc:{name:'etc',type:'dir',children:{
@@ -135,6 +133,39 @@ const splitPath = p => {
 const getNode = p => resolve(splitPath(p));
 const parentOf = p => { const s = splitPath(p).slice(); return {name:s.pop()||'', parent:resolve(s)||fs}; };
 
+const blogDirectory = () => fs.children.home.children.guest.children.blog;
+async function requestJson(path){
+  const response = await fetch(path, { headers: { Accept: 'application/json' } });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(payload?.error?.message || `HTTP ${response.status}`);
+  return payload;
+}
+async function syncBlogDirectory(){
+  const payload = await requestJson('/api/public/posts?page=1&pageSize=50');
+  const posts = Array.isArray(payload.data) ? payload.data : [];
+  const children = {};
+  for (const post of posts){
+    const name = `${post.slug}.md`;
+    children[name] = { name, type:'file', content:null, remote:true, title:post.title };
+  }
+  blogDirectory().children = children;
+  return posts;
+}
+function blogSlugFromPath(path){
+  const parts = splitPath(path);
+  if (parts.length !== 4 || parts[0] !== 'home' || parts[1] !== 'guest' || parts[2] !== 'blog') return null;
+  return parts[3].replace(/\.md$/, '');
+}
+async function readBlogPost(path){
+  const slug = blogSlugFromPath(path);
+  if (!slug) return null;
+  const payload = await requestJson(`/api/public/posts/${encodeURIComponent(slug)}`);
+  const post = payload.data;
+  const name = `${slug}.md`;
+  blogDirectory().children[name] = { name, type:'file', content:post.bodyMarkdown, remote:true, title:post.title };
+  return post.bodyMarkdown;
+}
+
 /* ============================================================
    2. 命令
    ============================================================ */
@@ -159,10 +190,15 @@ def('man', ({args}) => {
           P('用法', C.grn2) + '    ' + (c.usage ? c.usage : n), ''];
 }, '查看某个命令的用法');
 
-def('ls', ({args}) => {
+def('ls', async ({args}) => {
   const long = args.some(a => /^-l|-la|-al$/.test(a));
   const all  = args.some(a => /^-a|-la|-al$/.test(a));
   const target = args.find(a => !a.startsWith('-')) || '.';
+  const targetParts = splitPath(target);
+  if (targetParts.length === 3 && targetParts[0] === 'home' && targetParts[1] === 'guest' && targetParts[2] === 'blog') {
+    try { await syncBlogDirectory(); }
+    catch (error) { return [P(`ls: blog: ${error.message}`, C.red)]; }
+  }
   const node = getNode(target);
   if (!node) return [P(`ls: ${target}: 没有那个文件或目录`, C.red)];
   if (node.type === 'file') return [node.name];
@@ -195,11 +231,21 @@ def('uname', ({args}) => [args.includes('-a')
   ? 'termbook 0.2.0 browser x86_64 WebAssembly JavaScript'
   : 'termbook'], '显示系统信息');
 
-def('cat', ({args}) => {
+def('cat', async ({args}) => {
   if (!args.length) return [P('用法: cat <文件>', C.soft)];
   const out = [];
   for (const p of args){
-    const n = getNode(p);
+    let n = getNode(p);
+    const slug = blogSlugFromPath(p);
+    if (slug && (!n || n.content == null)) {
+      try {
+        await readBlogPost(p);
+        n = getNode(p);
+      } catch (error) {
+        out.push(P(`cat: ${p}: ${error.message}`, C.red));
+        continue;
+      }
+    }
     if (!n) { out.push(P(`cat: ${p}: 没有那个文件`, C.red)); continue; }
     if (n.type === 'dir') { out.push(P(`cat: ${p}: 是一个目录`, C.red)); continue; }
     out.push(n.content);
@@ -339,6 +385,19 @@ def('cowsay', ({args}) => {
 def('banner', () => drawLogo(), '重绘启动横幅');
 def('reboot', ({env}) => { env.reboot(); return []; }, '重跑一次启动序列');
 
+def('blog', () => {
+  window.top.location.href = '/blog';
+  return [P('正在打开博客…', C.soft)];
+}, '打开完整博客页面');
+
+def('open', ({args}) => {
+  const target = args[0];
+  if (target === 'blog') window.top.location.href = '/blog';
+  else if (target === 'about') window.top.location.href = '/about';
+  else return [P('用法: open <blog|about>', C.soft)];
+  return [P(`正在打开 ${target}…`, C.soft)];
+}, '打开公开页面', 'open <blog|about>');
+
 /* --- vim 编辑器入口 --- */
 function vimOpen(arg){
   return [P('vim: 访客模式禁止编辑，请使用公开阅读命令。', C.red)];
@@ -370,7 +429,7 @@ def('about', () => [
 /* ============================================================
    3. 执行器：管道 + 重定向
    ============================================================ */
-function runLine(raw){
+async function runLine(raw){
   const line = raw.trim();
   if (!line) return [];
   // 重定向 >
@@ -390,7 +449,7 @@ function runLine(raw){
     if (['mkdir','touch','rm','cp','mv','vim','vi','nvim'].includes(name))
       return [P(`${name}: 访客模式为只读，不能修改或编辑文件。`, C.red)];
     let res;
-    try { res = cmd.fn({args, stdin, env, setCwd:(p)=>{cwd=p;}}); }
+    try { res = await cmd.fn({args, stdin, env, setCwd:(p)=>{cwd=p;}}); }
     catch(e){ return [P('sh: 执行出错: ' + e.message, C.red)]; }
     const lines = res == null ? [] : (Array.isArray(res) ? res : [String(res)]);
     if (i === segs.length-1) outputs.push(...lines);
@@ -543,22 +602,30 @@ function complete(){
   }
 }
 
-function submit(){
+async function submit(){
+  if (locked) return;
+  locked = true;
   const line = buf; buf = '';
   newLine();
-  if (line.trim()){
-    env.history.push(line); env.hIdx = env.history.length;
-    try { localStorage.setItem(SESSION_KEY, JSON.stringify({ history: env.history.slice(-100) })); } catch {}
-    const out = runLine(line);
-    if (out && out.length) term.write(out.join('\r\n') + '\r\n');
+  try {
+    if (line.trim()){
+      env.history.push(line); env.hIdx = env.history.length;
+      try { localStorage.setItem(SESSION_KEY, JSON.stringify({ history: env.history.slice(-100) })); } catch {}
+      const out = await runLine(line);
+      if (out && out.length) term.write(out.join('\r\n') + '\r\n');
+    }
+  } catch (error) {
+    term.write(P(`sh: ${error.message || '命令执行失败'}`, C.red) + '\r\n');
+  } finally {
+    locked = false;
+    writePrompt();
   }
-  writePrompt();
 }
 
 term.onData(d => {
   if (locked) return;
   if (VimEditor && VimEditor.active){ VimEditor.key(d); return; }
-  if (d === '\r'){ submit(); return; }
+  if (d === '\r'){ void submit(); return; }
   if (d === '\u007f'){ if (buf.length){ buf = buf.slice(0,-1); refresh(); } return; }
   if (d === '\t'){ complete(); return; }
   if (d === '\u0003'){ term.write('^C'); buf=''; newLine(); writePrompt(); return; }
@@ -594,7 +661,7 @@ VimEditor.install(term, {
 
 boot();
 window.__vim = (arg) => vimOpen(arg);
-window.__run = (c) => { if (!locked){ buf = c; submit(); } };
+window.__run = (c) => { if (!locked){ buf = c; void submit(); } };
 window.__ready = true;
 </script>
 </body>
