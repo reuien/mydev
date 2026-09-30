@@ -39,6 +39,17 @@ yarn-error.log*
 .turbo/
 .vite/
 .codebase-memory/
+PRODUCT.md
+
+# Local AI/editor harness configuration
+.claude/
+.codex/
+.cursor/
+
+# Experimental terminal-blog prototype (not part of the current site)
+/experiments/terminal-blog/
+/src/pages/terminal.astro
+/public/terminal-blog/
 
 # Editor and operating-system metadata
 .DS_Store

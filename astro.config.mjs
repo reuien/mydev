@@ -9,6 +9,10 @@ export default defineConfig({
   adapter: cloudflare({
     // This project does not use runtime image transforms.
     imageService: 'passthrough',
+    // Keep local development on the same D1 binding used by Workers in production.
+    // Wrangler persists the local D1 database under .wrangler/state.
+    configPath: './wrangler.jsonc',
+    persistState: { path: './.wrangler/state' },
   }),
   // Avoid provisioning a KV namespace when no page uses Astro sessions.
   session: false,
@@ -24,7 +28,7 @@ export default defineConfig({
     // versioned SSR modules that the running Cloudflare worker still references.
     cacheDir: `node_modules/.vite/${astroCommand}`,
     optimizeDeps: {
-      exclude: ['rehype-sanitize'],
+      exclude: ['rehype-sanitize', 'astro/assets/services/noop'],
     },
   },
 });

@@ -4,5 +4,32 @@ import { createServicesFromEnvironment } from '../../http/context';
 import { renderMarkdown } from '../../lib/markdown';
 import SiteLayout from '../../layouts/SiteLayout.astro';
 const post=await createServicesFromEnvironment(env).posts.getPublicBySlug(Astro.params.slug??''); if(!post) Astro.response.status=404; const html=post?await renderMarkdown(post.bodyMarkdown):'';
+const readingMinutes = post ? Math.max(1, Math.ceil(post.bodyMarkdown.trim().split(/\s+/).filter(Boolean).length / 180)) : 0;
+const publishedDate = post?.publishedAt ? new Date(post.publishedAt) : null;
 ---
-<SiteLayout title={post?`${post.title} — MyDev`:'Post not found — MyDev'} description={post?.excerpt??'请求的文章不存在。'}>{post?<><header class="page-head"><p class="eyebrow">Writing / {post.publishedAt?.slice(0,10)}</p><h1>{post.title}</h1><p>{post.excerpt}</p></header><article class="prose" set:html={html}/></>:<header class="page-head"><p class="eyebrow">404 / Missing</p><h1>Not found.</h1><p>这篇文章当前不可用。<a href="/blog">返回文章列表</a>。</p></header>}</SiteLayout>
+<SiteLayout title={post?`${post.title} — MyDev`:'Post not found — MyDev'} description={post?.excerpt??'请求的文章不存在。'}>
+  {post ? <>
+    <header class="article-head">
+      <a class="back-link" href="/blog">← 返回文章列表</a>
+      <p class="eyebrow">Writing / 文章</p>
+      <h1>{post.title}</h1>
+      <p class="article-excerpt">{post.excerpt}</p>
+      <div class="article-meta" aria-label="文章信息">
+        {publishedDate && <time datetime={post.publishedAt ?? undefined}>{publishedDate.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' })}</time>}
+        <span>{readingMinutes} 分钟阅读</span>
+      </div>
+    </header>
+    <div class="article-layout">
+      <aside class="article-rail" aria-label="文章导航">
+        <span class="rail-label">READING_NOTE</span>
+        <span class="rail-line" aria-hidden="true"></span>
+        <a href="#article-content">开始阅读</a>
+      </aside>
+      <article id="article-content" class="prose" set:html={html}/>
+    </div>
+    <nav class="article-end" aria-label="文章结束导航">
+      <a href="/blog">← 查看全部文章</a>
+      <a href="#content">回到顶部 ↑</a>
+    </nav>
+  </> : <header class="page-head"><p class="eyebrow">404 / Missing</p><h1>Not found.</h1><p>这篇文章当前不可用。<a href="/blog">返回文章列表</a>。</p></header>}
+</SiteLayout>

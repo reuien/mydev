@@ -11,7 +11,7 @@ export default defineConfig({
     { name: 'mobile-chromium', use: { ...devices['Pixel 7'], channel: 'chrome' } },
   ],
   webServer: {
-    command: 'pnpm wrangler d1 migrations apply mydev --local && pnpm dev --background --host 127.0.0.1 && pnpm astro dev logs --follow',
+    command: 'pnpm db:migrate:local && pnpm dev --host 127.0.0.1',
     url: 'http://127.0.0.1:4321',
     reuseExistingServer: !process.env.CI,
   },

@@ -11,6 +11,8 @@
     "build": "astro build",
     "deploy": "tsx scripts/check-deploy-config.ts && astro build && wrangler deploy",
     "deploy:check": "tsx scripts/check-deploy-config.ts && astro build && wrangler deploy --dry-run",
+    "db:migrate:local": "wrangler d1 migrations apply mydev --local",
+    "db:migrate:remote": "wrangler d1 migrations apply mydev --remote",
     "publish": "tsx scripts/publish.ts",
     "preview": "astro preview",
     "typecheck": "astro check",
