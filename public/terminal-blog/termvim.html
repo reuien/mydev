@@ -8,9 +8,9 @@
 <style>
   html,body{height:100%;margin:0;overflow:hidden;background:#1C1F1B;}
   /* 整个视口就是终端，没有任何页面容器 */
-  #term{width:100vw;height:100dvh;min-height:0;padding:16px 18px;box-sizing:border-box;overflow:hidden;}
+  #term{width:100%;height:100%;min-height:0;padding:16px 18px;box-sizing:border-box;overflow:hidden;}
   .xterm{height:100%;min-height:0;}
-  .xterm-viewport{height:100%!important;background:transparent!important;scrollbar-width:thin;overflow-y:scroll!important;overscroll-behavior:contain;}
+  .xterm-viewport{height:100%!important;background:transparent!important;scrollbar-width:thin;overflow-y:auto!important;overscroll-behavior:contain;}
   .xterm .xterm-viewport::-webkit-scrollbar{width:8px;}
   .xterm .xterm-viewport::-webkit-scrollbar-thumb{background:#3A4038;}
   .xterm .xterm-viewport::-webkit-scrollbar-track{background:transparent;}
@@ -424,6 +424,21 @@ term.loadAddon(fit);
 term.open(document.getElementById('term'));
 try { fit.fit(); } catch(e){}
 
+// iframe 首次布局、字体加载和浏览器地址栏收起都会改变可用高度。
+// 只在 open() 后 fit 一次会导致底部 prompt 被截断，因此统一走稳定的重排入口。
+let fitTimer;
+function fitTerminal(){
+  clearTimeout(fitTimer);
+  fitTimer = setTimeout(() => {
+    try { fit.fit(); term.scrollToBottom(); } catch(e){}
+    if (window.VimEditor) VimEditor.resize();
+  }, 0);
+}
+requestAnimationFrame(() => requestAnimationFrame(fitTerminal));
+window.addEventListener('load', fitTerminal, { once: true });
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitTerminal);
+if (window.ResizeObserver) new ResizeObserver(fitTerminal).observe(document.getElementById('term'));
+
 const bootAt = Date.now();
 let buf = '', locked = true;
 const SESSION_KEY = 'termbook-guest-session-v1';
@@ -493,14 +508,8 @@ function boot(){
       locked = false;
       if (env.history.length){
         term.write(P('  已恢复上次访客会话', C.soft) + '\r\n');
-        const restoredHistory = env.history.slice();
-        env.history.length = 0;
-        for (const line of restoredHistory){
-          term.write(PROMPT() + line + '\r\n');
-          const restored = runLine(line);
-          if (restored && restored.length) term.write(restored.join('\r\n') + '\r\n');
-          env.history.push(line);
-        }
+        // 只恢复命令历史供上下键浏览，不能在启动时重新执行历史命令。
+        // 否则刷新页面会重复执行此前输入过的 ls/cat 等命令，造成输出不断增长。
         term.write(PROMPT());
         term.scrollToBottom();
       }
@@ -567,7 +576,7 @@ term.onData(d => {
 let rt;
 window.addEventListener('resize', () => {
   clearTimeout(rt);
-  rt = setTimeout(() => { try { fit.fit(); } catch(e){} if (window.VimEditor) VimEditor.resize(); }, 80);
+  rt = setTimeout(fitTerminal, 80);
 });
 
 /* --- vim 与虚拟文件系统的桥接 --- */
