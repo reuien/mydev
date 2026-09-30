@@ -6,6 +6,10 @@ import { resolveAstroCommand } from './src/config/astro-command';
 const astroCommand = resolveAstroCommand(process.argv);
 
 export default defineConfig({
+  server: {
+    port: 4321,
+    strictPort: true,
+  },
   adapter: cloudflare({
     // This project does not use runtime image transforms.
     imageService: 'passthrough',
