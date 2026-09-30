@@ -3,6 +3,8 @@ import Header from '../components/Header.astro';
 import CosmicBackdrop from '../components/CosmicBackdrop.astro';
 import OpticalCursor from '../components/OpticalCursor.astro';
 import '../styles/global.css';
+import TerminalShell from '../components/TerminalShell.astro';
+import '../styles/terminal.css';
 
 interface Props { title?: string; description?: string }
 const { title = 'MyDev', description = 'Yuinen 的项目、文章与开发实践。' } = Astro.props;
@@ -27,6 +29,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin);
     <OpticalCursor />
     <Header />
     <main id="content"><slot /></main>
+    <TerminalShell mode="panel" />
     <footer class="site-footer frame">
       <span><i></i> MYDEV</span><span>{new Date().getUTCFullYear()} · 持续构建</span>
     </footer>

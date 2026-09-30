@@ -1,0 +1,60 @@
+---
+interface Props { mode?: 'fullscreen' | 'panel' }
+const { mode = 'fullscreen' } = Astro.props;
+---
+<section class:list={["terminal-shell", `terminal-${mode}`]} data-terminal data-mode={mode} aria-label="MyDev 终端">
+  <div class="terminal-chrome">
+    <span class="terminal-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+    <span class="terminal-title">guest@termbook:~</span>
+    <span class="terminal-status">read-only / public</span>
+    {mode === 'panel' && <button class="terminal-close" type="button" data-terminal-close aria-label="收起终端">×</button>}
+  </div>
+  <div class="terminal-output" data-terminal-output tabindex="0">
+    <p><span class="terminal-accent">MyDev</span> terminal workspace <span class="terminal-muted">v1.0</span></p>
+    <p class="terminal-muted">输入 <span class="terminal-command">help</span> 查看可用命令。这里是只读公共空间。</p>
+  </div>
+  <form class="terminal-prompt" data-terminal-form>
+    <label for={`terminal-input-${mode}`}><span data-terminal-prompt>guest@termbook:~$</span></label>
+    <input id={`terminal-input-${mode}`} data-terminal-input autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="终端命令" />
+  </form>
+</section>
+
+{mode === 'panel' && <button class="terminal-dock" type="button" data-terminal-open><span>guest@termbook:~/blog</span><b>terminal</b><em>⌃ 展开</em></button>}
+
+<script>
+  const shell = document.querySelector<HTMLElement>('[data-terminal]');
+  if (shell) {
+    const output = shell.querySelector<HTMLElement>('[data-terminal-output]')!;
+    const form = shell.querySelector<HTMLFormElement>('[data-terminal-form]')!;
+    const input = shell.querySelector<HTMLInputElement>('[data-terminal-input]')!;
+    const prompt = shell.querySelector<HTMLElement>('[data-terminal-prompt]')!;
+    const panel = shell.dataset.mode === 'panel';
+    const print = (value: string, className = '') => { const line = document.createElement('p'); line.className = className; line.textContent = value; output.appendChild(line); output.scrollTop = output.scrollHeight; };
+    const commands: Record<string, string> = {
+      help: 'help       显示命令\nls         列出公开入口\nblog       打开完整博客\nabout      打开作者介绍\nls blog    列出文章\ncat <slug> 快速阅读文章\nclear      清屏\nexit       收起终端',
+      ls: 'blog/     about/\nREADME.md',
+      about: '作者：Reuien\n方向：全栈开发 / 云原生\n正在做：记录软件、项目与长期实践',
+      'ls blog': '文章目录由公开文章 API 提供。输入 blog 打开完整博客。',
+      'pwd': panel ? '/home/guest/blog' : '/home/guest',
+    };
+    const navigate = (path: string) => { window.location.href = path; };
+    const run = (raw: string) => {
+      const command = raw.trim(); if (!command) return;
+      print(`${prompt.textContent} ${command}`, 'terminal-input-line'); input.value = '';
+      const [name, ...args] = command.split(/\s+/);
+      if (name === 'clear') { output.replaceChildren(); return; }
+      if (['vim','vi','nvim','mkdir','touch','rm','cp','mv','write','edit'].includes(name)) { print('Permission denied: public terminal is read-only.', 'terminal-error'); return; }
+      if (name === 'blog') { navigate('/blog'); return; }
+      if (name === 'about' || (name === 'open' && args[0] === 'about')) { navigate('/about'); return; }
+      if (name === 'open' && args[0] === 'blog') { navigate('/blog'); return; }
+      if (name === 'cat' && args[0]) { navigate(`/blog/${encodeURIComponent(args[0].replace(/\.md$/, ''))}`); return; }
+      if (commands[command]) commands[command].split('\n').forEach(line => print(line));
+      else print(`command not found: ${command}. 输入 help 查看帮助。`, 'terminal-error');
+    };
+    form.addEventListener('submit', event => { event.preventDefault(); run(input.value); });
+    document.addEventListener('keydown', event => { if ((event.ctrlKey || event.metaKey) && event.key === '`' && panel) { event.preventDefault(); shell.classList.toggle('is-open'); shell.parentElement?.querySelector<HTMLElement>('[data-terminal-open]')?.classList.toggle('is-hidden'); if (shell.classList.contains('is-open')) input.focus(); } if (event.key === 'Escape' && panel) shell.classList.remove('is-open'); });
+    shell.querySelector('[data-terminal-close]')?.addEventListener('click', () => shell.classList.remove('is-open'));
+    shell.parentElement?.querySelector('[data-terminal-open]')?.addEventListener('click', () => { shell.classList.add('is-open'); input.focus(); });
+    if (!panel) input.focus();
+  }
+</script>

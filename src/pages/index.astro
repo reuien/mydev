@@ -1,3 +1,7 @@
 ---
-return Astro.redirect('/terminal-blog/termvim.html');
+import TerminalShell from '../components/TerminalShell.astro';
+import '../styles/terminal.css';
+---
+
+<TerminalShell mode="fullscreen" />
 ---
