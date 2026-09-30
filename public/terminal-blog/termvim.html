@@ -132,10 +132,12 @@ const splitPath = p => {
 };
 const getNode = p => resolve(splitPath(p));
 const parentOf = p => { const s = splitPath(p).slice(); return {name:s.pop()||'', parent:resolve(s)||fs}; };
+const APP_ORIGIN = window.location.protocol === 'file:' ? 'http://localhost:4321' : window.location.origin;
+const appUrl = path => new URL(path, APP_ORIGIN).href;
 
 const blogDirectory = () => fs.children.home.children.guest.children.blog;
 async function requestJson(path){
-  const response = await fetch(path, { headers: { Accept: 'application/json' } });
+  const response = await fetch(appUrl(path), { headers: { Accept: 'application/json' } });
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(payload?.error?.message || `HTTP ${response.status}`);
   return payload;
@@ -386,14 +388,14 @@ def('banner', () => drawLogo(), '重绘启动横幅');
 def('reboot', ({env}) => { env.reboot(); return []; }, '重跑一次启动序列');
 
 def('blog', () => {
-  window.top.location.href = '/blog';
+  window.top.location.href = appUrl('/blog');
   return [P('正在打开博客…', C.soft)];
 }, '打开完整博客页面');
 
 def('open', ({args}) => {
   const target = args[0];
-  if (target === 'blog') window.top.location.href = '/blog';
-  else if (target === 'about') window.top.location.href = '/about';
+  if (target === 'blog') window.top.location.href = appUrl('/blog');
+  else if (target === 'about') window.top.location.href = appUrl('/about');
   else return [P('用法: open <blog|about>', C.soft)];
   return [P(`正在打开 ${target}…`, C.soft)];
 }, '打开公开页面', 'open <blog|about>');
