@@ -9,6 +9,7 @@ const validPost = {
   excerpt: 'A short introduction.',
   bodyMarkdown: '# Hello',
   coverImageUrl: '/assets/posts/first-post.webp',
+  groupId: null,
 };
 
 const validProject = {

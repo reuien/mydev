@@ -10,6 +10,7 @@ export type PostRow = {
   excerpt: string;
   body_markdown: string;
   cover_image_url: string | null;
+  group_id: string | null;
   status: 'draft' | 'published';
   created_at: string;
   updated_at: string;
@@ -31,7 +32,7 @@ export type ProjectRow = {
   updated_at: string;
 };
 
-export const POST_COLUMNS = `id, slug, title, excerpt, body_markdown, cover_image_url,
+export const POST_COLUMNS = `id, slug, title, excerpt, body_markdown, cover_image_url, group_id,
   status, created_at, updated_at, published_at`;
 
 export const PROJECT_COLUMNS = `id, slug, name, summary, body_markdown, tech_stack_json,
@@ -45,6 +46,7 @@ export function toPost(row: PostRow): Post {
     excerpt: row.excerpt,
     bodyMarkdown: row.body_markdown,
     coverImageUrl: row.cover_image_url,
+    groupId: row.group_id,
     status: row.status,
     createdAt: row.created_at,
     updatedAt: row.updated_at,

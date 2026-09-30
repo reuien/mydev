@@ -1,8 +1,10 @@
 import type { D1Database } from '@cloudflare/workers-types';
 
 import { PostService } from '../application/post-service';
+import { PostGroupService } from '../application/post-group-service';
 import { ProjectService } from '../application/project-service';
 import { D1PostRepository } from '../repositories/d1/post-repository';
+import { D1PostGroupRepository } from '../repositories/d1/post-group-repository';
 import { D1ProjectRepository } from '../repositories/d1/project-repository';
 import type { AuthorRateLimiter } from '../middleware/rate-limit';
 import type { AuthorHandlerContext } from './author-handlers';
@@ -10,6 +12,7 @@ import type { AuthorHandlerContext } from './author-handlers';
 export function createServices(database: D1Database) {
   return {
     posts: new PostService(new D1PostRepository(database)),
+    postGroups: new PostGroupService(new D1PostGroupRepository(database)),
     projects: new ProjectService(new D1ProjectRepository(database)),
   };
 }

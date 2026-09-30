@@ -26,7 +26,7 @@ export function runPostRepositoryContract(name: string, createHarness: () => Har
 
       const updated = await harness.repository.updateContent(
         post.id,
-        { title: 'Updated', excerpt: post.excerpt, bodyMarkdown: 'Updated body', coverImageUrl: null },
+        { title: 'Updated', excerpt: post.excerpt, bodyMarkdown: 'Updated body', coverImageUrl: null, groupId: null },
         '2026-09-07T01:00:00.000Z',
       );
       expect(updated).toMatchObject({ title: 'Updated', updatedAt: '2026-09-07T01:00:00.000Z' });

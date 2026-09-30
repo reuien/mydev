@@ -7,6 +7,7 @@ const editablePostShape = {
   excerpt: z.string().trim().min(1).max(320),
   bodyMarkdown: markdownSchema,
   coverImageUrl: nullableCoverImageUrlSchema,
+  groupId: z.uuid().nullable().optional().default(null),
 };
 
 export const createPostSchema = z
@@ -14,6 +15,7 @@ export const createPostSchema = z
     slug: slugSchema,
     ...editablePostShape,
     coverImageUrl: nullableCoverImageUrlSchema.optional().default(null),
+    groupId: z.uuid().nullable().optional().default(null),
   });
 
 export const updatePostSchema = z.strictObject(editablePostShape);

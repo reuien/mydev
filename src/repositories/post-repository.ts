@@ -1,7 +1,7 @@
 import type { Post, PostStatus } from '../domain/post';
 
 export type NewPost = Post;
-export type UpdatePost = Pick<Post, 'title' | 'excerpt' | 'bodyMarkdown' | 'coverImageUrl'>;
+export type UpdatePost = Pick<Post, 'title' | 'excerpt' | 'bodyMarkdown' | 'coverImageUrl' | 'groupId'>;
 export type PostListItem = Omit<Post, 'bodyMarkdown' | 'status' | 'createdAt'>;
 export type PageRequest = { limit: number; offset: number };
 export type PageResult<T> = { items: T[]; total: number };

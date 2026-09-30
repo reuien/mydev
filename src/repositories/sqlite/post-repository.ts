@@ -27,7 +27,7 @@ export class SqlitePostRepository implements PostRepository {
   async create(input: NewPost): Promise<Post> {
     try {
       this.database
-        .prepare(`INSERT INTO posts (${POST_COLUMNS}) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+        .prepare(`INSERT INTO posts (${POST_COLUMNS}) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
         .run(
           input.id,
           input.slug,
@@ -35,6 +35,7 @@ export class SqlitePostRepository implements PostRepository {
           input.excerpt,
           input.bodyMarkdown,
           input.coverImageUrl,
+          input.groupId,
           input.status,
           input.createdAt,
           input.updatedAt,
@@ -79,10 +80,10 @@ export class SqlitePostRepository implements PostRepository {
     try {
       const result = this.database
         .prepare(
-          `UPDATE posts SET title = ?, excerpt = ?, body_markdown = ?, cover_image_url = ?, updated_at = ?
+          `UPDATE posts SET title = ?, excerpt = ?, body_markdown = ?, cover_image_url = ?, group_id = ?, updated_at = ?
            WHERE id = ?`,
         )
-        .run(input.title, input.excerpt, input.bodyMarkdown, input.coverImageUrl, now, id);
+        .run(input.title, input.excerpt, input.bodyMarkdown, input.coverImageUrl, input.groupId, now, id);
       return result.changes === 0 ? null : this.findAuthorById(id);
     } catch (error) {
       throw new StorageUnavailableError('SQLite post update failed', { cause: error });

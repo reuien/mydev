@@ -1,6 +1,7 @@
 import { ZodError, type ZodType } from 'zod';
 
 import type { PostService } from '../application/post-service';
+import type { PostGroupService } from '../application/post-group-service';
 import type { ProjectService } from '../application/project-service';
 import {
   IdempotencyConflictError,
@@ -12,6 +13,7 @@ import type { AuthorRateLimiter } from '../middleware/rate-limit';
 import { allowAllRateLimiter } from '../middleware/rate-limit';
 import { requestIdFor } from '../middleware/request-id';
 import { createPostSchema, updatePostSchema } from '../schemas/post';
+import { createPostGroupSchema } from '../schemas/post-group';
 import { createProjectSchema, updateProjectSchema } from '../schemas/project';
 import { authorSuccessResponse, errorResponse, noContentResponse } from './response';
 
@@ -21,6 +23,7 @@ const IDEMPOTENCY_KEY_PATTERN = /^[\x21-\x7e]{1,128}$/;
 
 export interface AuthorHandlerContext {
   posts: PostService;
+  postGroups?: PostGroupService;
   projects: ProjectService;
   expectedToken: string;
   clientKey?: string;
@@ -94,6 +97,19 @@ export function createAuthorPost(request: Request, context: AuthorHandlerContext
       ...(result.replayed ? { 'Idempotency-Replayed': 'true' } : {}),
     });
   });
+}
+
+export function createAuthorPostGroup(request: Request, context: AuthorHandlerContext): Promise<Response> {
+  return authorize(request, context, async (requestId) => {
+    const input = await parseJson(request, createPostGroupSchema, requestId);
+    if (input instanceof Response) return input;
+    const group = await context.postGroups!.create(input);
+    return authorSuccessResponse(group, requestId, 201, { Location: `/api/author/post-groups/${group.id}` });
+  });
+}
+
+export function listAuthorPostGroups(request: Request, context: AuthorHandlerContext): Promise<Response> {
+  return authorize(request, context, async (requestId) => authorSuccessResponse(await context.postGroups!.list(), requestId));
 }
 
 export function updateAuthorPost(request: Request, context: AuthorHandlerContext, id: string): Promise<Response> {

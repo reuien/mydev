@@ -7,6 +7,7 @@ export interface Post {
   excerpt: string;
   bodyMarkdown: string;
   coverImageUrl: string | null;
+  groupId: string | null;
   status: PostStatus;
   createdAt: string;
   updatedAt: string;

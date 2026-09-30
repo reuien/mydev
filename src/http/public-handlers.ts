@@ -1,4 +1,5 @@
 import type { PostService } from '../application/post-service';
+import type { PostGroupService } from '../application/post-group-service';
 import type { ProjectService } from '../application/project-service';
 import type { Post } from '../domain/post';
 import { slugSchema } from '../schemas/common';
@@ -41,6 +42,10 @@ export function handlePublicPostList(request: Request, service: PostService): Pr
       totalPages: result.total === 0 ? 0 : Math.ceil(result.total / pageSize),
     });
   });
+}
+
+export function handlePublicPostGroupList(request: Request, service: PostGroupService): Promise<Response> {
+  return handleRequest(request, async (requestId) => successResponse(await service.list(), requestId));
 }
 
 export function handlePublicPostDetail(request: Request, service: PostService, slug: string): Promise<Response> {

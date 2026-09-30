@@ -9,6 +9,7 @@ const draftPost = (): Post => ({
   excerpt: 'A short introduction.',
   bodyMarkdown: '# Hello',
   coverImageUrl: null,
+  groupId: null,
   status: 'draft',
   createdAt: '2026-09-07T00:00:00.000Z',
   updatedAt: '2026-09-07T00:00:00.000Z',

@@ -1,7 +1,7 @@
 ---
 import type { PostListItem } from '../repositories/post-repository';
-interface Props { post: PostListItem; index?: number }
-const { post, index = 0 } = Astro.props;
+interface Props { post: PostListItem; groupName?: string; index?: number }
+const { post, groupName, index = 0 } = Astro.props;
 const publishedDate = post.publishedAt ? new Date(post.publishedAt) : null;
 const dateLabel = publishedDate && !Number.isNaN(publishedDate.getTime())
   ? publishedDate.toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' }).replaceAll('/', '.')
@@ -13,6 +13,7 @@ const dateLabel = publishedDate && !Number.isNaN(publishedDate.getTime())
     <time datetime={post.publishedAt ?? undefined}>{dateLabel}</time>
   </div>
   <div class="post-summary">
+    {groupName && <span class="post-group">{groupName}</span>}
     <h3><a href={`/blog/${post.slug}`}>{post.title}</a></h3>
     <p>{post.excerpt}</p>
   </div>

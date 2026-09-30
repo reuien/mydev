@@ -27,7 +27,7 @@ export class D1PostRepository implements PostRepository {
   async create(input: NewPost): Promise<Post> {
     try {
       await this.database
-        .prepare(`INSERT INTO posts (${POST_COLUMNS}) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+        .prepare(`INSERT INTO posts (${POST_COLUMNS}) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
         .bind(
           input.id,
           input.slug,
@@ -35,6 +35,7 @@ export class D1PostRepository implements PostRepository {
           input.excerpt,
           input.bodyMarkdown,
           input.coverImageUrl,
+          input.groupId,
           input.status,
           input.createdAt,
           input.updatedAt,
@@ -81,10 +82,10 @@ export class D1PostRepository implements PostRepository {
     try {
       const result = await this.database
         .prepare(
-          `UPDATE posts SET title = ?, excerpt = ?, body_markdown = ?, cover_image_url = ?, updated_at = ?
+          `UPDATE posts SET title = ?, excerpt = ?, body_markdown = ?, cover_image_url = ?, group_id = ?, updated_at = ?
            WHERE id = ?`,
         )
-        .bind(input.title, input.excerpt, input.bodyMarkdown, input.coverImageUrl, now, id)
+        .bind(input.title, input.excerpt, input.bodyMarkdown, input.coverImageUrl, input.groupId, now, id)
         .run();
       return result.meta.changes === 0 ? null : this.findAuthorById(id);
     } catch (error) {
@@ -145,7 +146,7 @@ export class D1PostRepository implements PostRepository {
       }
       statements.push(
         this.database
-          .prepare(`INSERT INTO posts (${POST_COLUMNS}) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+          .prepare(`INSERT INTO posts (${POST_COLUMNS}) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
           .bind(
             input.id,
             input.slug,
@@ -153,6 +154,7 @@ export class D1PostRepository implements PostRepository {
             input.excerpt,
             input.bodyMarkdown,
             input.coverImageUrl,
+            input.groupId,
             input.status,
             input.createdAt,
             input.updatedAt,

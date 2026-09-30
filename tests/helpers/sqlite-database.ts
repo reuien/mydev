@@ -13,8 +13,9 @@ export type SqliteTestDatabase = {
 export function createSqliteTestDatabase(): SqliteTestDatabase {
   const directory = mkdtempSync(join(tmpdir(), 'mydev-sqlite-'));
   const database = createSqliteClient(join(directory, 'test.sqlite'));
-  const migration = readFileSync(resolve('migrations/0001_initial.sql'), 'utf8');
-  database.exec(migration);
+  for (const name of ['0001_initial.sql', '0002_post_groups.sql']) {
+    database.exec(readFileSync(resolve('migrations', name), 'utf8'));
+  }
 
   return {
     database,

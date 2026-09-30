@@ -33,6 +33,7 @@ describe('PostService', () => {
       excerpt: 'Summary',
       bodyMarkdown: '# New',
       coverImageUrl: null,
+      groupId: null,
     });
 
     expect(created).toMatchObject({ status: 'draft', publishedAt: null });

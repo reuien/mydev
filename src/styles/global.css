@@ -144,6 +144,7 @@ h3 { font-size: clamp(22px, 2.3vw, 30px); letter-spacing: -.015em; }
 .post-row:hover { border-color: var(--line-hot); background: rgba(154, 229, 207, .025); }
 .post-date { display: flex; gap: 18px; padding-top: 5px; color: var(--muted); font: 11px/1.6 var(--mono); font-variant-numeric: tabular-nums; }
 .post-date span { color: rgba(154, 229, 207, .55); }
+.post-group { display: inline-block; margin-bottom: 8px; color: var(--signal); font: 10px/1.5 var(--mono); letter-spacing: .08em; }
 .post-summary h3 { margin: 0; font-family: var(--body); font-size: clamp(19px, 1.65vw, 25px); line-height: 1.4; letter-spacing: -.015em; }
 .post-summary h3 a { text-decoration: none; }
 .post-summary h3 a::after { content: ''; position: absolute; inset: 0; }
