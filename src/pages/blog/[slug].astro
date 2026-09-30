@@ -1,9 +1,11 @@
 ---
 import { env } from 'cloudflare:workers';
 import { createServicesFromEnvironment } from '../../http/context';
-import { renderMarkdown } from '../../lib/markdown';
+import { renderMarkdownDocument } from '../../lib/markdown';
 import SiteLayout from '../../layouts/SiteLayout.astro';
-const post=await createServicesFromEnvironment(env).posts.getPublicBySlug(Astro.params.slug??''); if(!post) Astro.response.status=404; const html=post?await renderMarkdown(post.bodyMarkdown):'';
+const post=await createServicesFromEnvironment(env).posts.getPublicBySlug(Astro.params.slug??'');
+if(!post) Astro.response.status=404;
+const document=post ? await renderMarkdownDocument(post.bodyMarkdown) : { html: '', headings: [] };
 const readingMinutes = post ? Math.max(1, Math.ceil(post.bodyMarkdown.trim().split(/\s+/).filter(Boolean).length / 180)) : 0;
 const publishedDate = post?.publishedAt ? new Date(post.publishedAt) : null;
 ---
@@ -20,12 +22,19 @@ const publishedDate = post?.publishedAt ? new Date(post.publishedAt) : null;
       </div>
     </header>
     <div class="article-layout">
-      <aside class="article-rail" aria-label="文章导航">
-        <span class="rail-label">READING_NOTE</span>
-        <span class="rail-line" aria-hidden="true"></span>
-        <a href="#article-content">开始阅读</a>
+      <aside class="article-rail" aria-label="文章章节">
+        <details class="article-outline" open>
+          <summary><span>章节分析</span><b>{document.headings.length}</b></summary>
+          {document.headings.length ? (
+            <ol>
+              {document.headings.map((heading) => (
+                <li class={`outline-depth-${heading.depth}`}><a href={`#${heading.id}`} data-outline-link>{heading.text}</a></li>
+              ))}
+            </ol>
+          ) : <p>这篇文章没有分节标题。</p>}
+        </details>
       </aside>
-      <article id="article-content" class="prose" set:html={html}/>
+      <article id="article-content" class="prose" set:html={document.html}/>
     </div>
     <nav class="article-end" aria-label="文章结束导航">
       <a href="/blog">← 查看全部文章</a>
@@ -33,3 +42,63 @@ const publishedDate = post?.publishedAt ? new Date(post.publishedAt) : null;
     </nav>
   </> : <header class="page-head"><p class="eyebrow">404 / Missing</p><h1>Not found.</h1><p>这篇文章当前不可用。<a href="/blog">返回文章列表</a>。</p></header>}
 </SiteLayout>
+
+<script>
+  const renderMermaid = async () => {
+    const blocks = document.querySelectorAll<HTMLElement>('pre > code.language-mermaid');
+    if (!blocks.length) return;
+    const { default: mermaid } = await import('mermaid');
+    mermaid.initialize({
+      startOnLoad: false,
+      securityLevel: 'strict',
+      theme: 'dark',
+      fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+      themeVariables: {
+        background: '#071014',
+        primaryColor: '#102126',
+        primaryTextColor: '#d9e4e7',
+        primaryBorderColor: '#4f756d',
+        lineColor: '#8fbbae',
+        secondaryColor: '#17282d',
+        tertiaryColor: '#0b171b',
+      },
+    });
+
+    for (const [index, code] of [...blocks].entries()) {
+      const source = code.textContent ?? '';
+      const pre = code.parentElement;
+      if (!pre) continue;
+      const figure = document.createElement('figure');
+      figure.className = 'mermaid-diagram';
+      figure.setAttribute('aria-label', `文章流程图 ${index + 1}`);
+      try {
+        const { svg, bindFunctions } = await mermaid.render(`article-mermaid-${index}`, source);
+        figure.innerHTML = svg;
+        bindFunctions?.(figure);
+      } catch {
+        figure.classList.add('is-error');
+        const message = document.createElement('p');
+        message.textContent = '这张 Mermaid 图暂时无法渲染，以下为原始定义。';
+        figure.appendChild(message);
+        figure.appendChild(pre.cloneNode(true));
+      }
+      pre.replaceWith(figure);
+    }
+  };
+
+  const outlineLinks = [...document.querySelectorAll<HTMLAnchorElement>('[data-outline-link]')];
+  const sections = outlineLinks
+    .map((link) => document.getElementById(decodeURIComponent(link.hash.slice(1))))
+    .filter((section): section is HTMLElement => Boolean(section));
+
+  if (sections.length && 'IntersectionObserver' in window) {
+    const observer = new IntersectionObserver((entries) => {
+      const current = entries.filter((entry) => entry.isIntersecting).at(-1)?.target;
+      if (!current) return;
+      outlineLinks.forEach((link) => link.toggleAttribute('aria-current', link.hash === `#${current.id}`));
+    }, { rootMargin: '-18% 0px -70% 0px' });
+    sections.forEach((section) => observer.observe(section));
+  }
+
+  void renderMermaid();
+</script>

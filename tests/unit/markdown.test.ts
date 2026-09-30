@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { renderMarkdown } from '../../src/lib/markdown';
+import { renderMarkdown, renderMarkdownDocument } from '../../src/lib/markdown';
 
 describe('renderMarkdown', () => {
   it('renders GFM tables and fenced code', async () => {
@@ -8,6 +8,18 @@ describe('renderMarkdown', () => {
 
     expect(html).toContain('<table>');
     expect(html).toContain('<code class="language-ts">');
+  });
+
+  it('extracts a stable chapter outline and keeps Mermaid code identifiable', async () => {
+    const document = await renderMarkdownDocument('## 错误处理\n\n### Fail Stop\n\n## 错误处理\n\n```mermaid\nflowchart LR\nA --> B\n```');
+
+    expect(document.headings).toEqual([
+      { depth: 2, id: 'user-content-错误处理', text: '错误处理' },
+      { depth: 3, id: 'user-content-fail-stop', text: 'Fail Stop' },
+      { depth: 2, id: 'user-content-错误处理-2', text: '错误处理' },
+    ]);
+    expect(document.html).toContain('<h2 id="user-content-错误处理">');
+    expect(document.html).toContain('<code class="language-mermaid">');
   });
 
   it('removes raw HTML, event handlers, and javascript URLs', async () => {
