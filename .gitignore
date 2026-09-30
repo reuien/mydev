@@ -46,10 +46,8 @@ PRODUCT.md
 .codex/
 .cursor/
 
-# Experimental terminal-blog prototype (not part of the current site)
+# Experimental terminal-blog prototype
 /experiments/terminal-blog/
-/src/pages/terminal.astro
-/public/terminal-blog/
 
 # Editor and operating-system metadata
 .DS_Store
