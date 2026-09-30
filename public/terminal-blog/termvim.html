@@ -450,7 +450,8 @@ const savedSession = (() => {
 const PROMPT = () => P('guest', C.grn) + P('@', C.soft) + P('termbook', C.grn) + ' ' +
                      P(dispPath(), C.sand) + ' ' + P('$', C.grn2) + ' ';
 const newLine = () => term.write('\r\n');
-const refresh = () => term.write('\r\x1b[K' + PROMPT() + buf);
+const writePrompt = (suffix = '') => term.write(PROMPT() + suffix, () => term.scrollToBottom());
+const refresh = () => term.write('\r\x1b[K' + PROMPT() + buf, () => term.scrollToBottom());
 
 const env = {
   history: Array.isArray(savedSession.history) ? savedSession.history.slice(-100) : [], hIdx: -1,
@@ -504,14 +505,13 @@ function boot(){
       drawLogo().forEach(l => term.write(l + '\r\n'));
       term.write(P('  输入 ', C.soft) + P('help', C.grn) + P(' 看命令，', C.soft) +
                  P('about', C.grn) + P(' 看看它是怎么搭的。', C.soft) + '\r\n');
-      newLine(); term.write(PROMPT());
+      newLine(); writePrompt();
       locked = false;
       if (env.history.length){
         term.write(P('  已恢复上次访客会话', C.soft) + '\r\n');
         // 只恢复命令历史供上下键浏览，不能在启动时重新执行历史命令。
         // 否则刷新页面会重复执行此前输入过的 ls/cat 等命令，造成输出不断增长。
-        term.write(PROMPT());
-        term.scrollToBottom();
+        writePrompt();
       }
       window.__booted = true;
     }, 220);
@@ -539,7 +539,7 @@ function complete(){
     refresh();
   } else if (hits.length > 1){
     newLine(); term.write(hits.map(h => P(h, C.grn)).join('   '));
-    newLine(); term.write(PROMPT() + buf);
+    newLine(); writePrompt(buf);
   }
 }
 
@@ -551,9 +551,8 @@ function submit(){
     try { localStorage.setItem(SESSION_KEY, JSON.stringify({ history: env.history.slice(-100) })); } catch {}
     const out = runLine(line);
     if (out && out.length) term.write(out.join('\r\n') + '\r\n');
-    term.scrollToBottom();
   }
-  term.write(PROMPT());
+  writePrompt();
 }
 
 term.onData(d => {
@@ -562,8 +561,8 @@ term.onData(d => {
   if (d === '\r'){ submit(); return; }
   if (d === '\u007f'){ if (buf.length){ buf = buf.slice(0,-1); refresh(); } return; }
   if (d === '\t'){ complete(); return; }
-  if (d === '\u0003'){ term.write('^C'); buf=''; newLine(); term.write(PROMPT()); return; }
-  if (d === '\u000c'){ env.clear(); term.write(PROMPT()); return; }
+  if (d === '\u0003'){ term.write('^C'); buf=''; newLine(); writePrompt(); return; }
+  if (d === '\u000c'){ env.clear(); writePrompt(); return; }
   if (d === '\u001b[A' || d === '\u001b[B'){
     if (!env.history.length) return;
     env.hIdx = Math.max(0, Math.min(env.history.length, env.hIdx + (d === '\u001b[A' ? -1 : 1)));
@@ -589,7 +588,7 @@ VimEditor.install(term, {
   },
   onExit: (msg) => {
     if (msg) term.write(P(msg, C.soft) + '\r\n');
-    term.write(PROMPT());
+    writePrompt();
   },
 });
 
