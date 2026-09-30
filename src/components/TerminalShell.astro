@@ -29,20 +29,42 @@ const { mode = 'fullscreen' } = Astro.props;
     const input = shell.querySelector<HTMLInputElement>('[data-terminal-input]')!;
     const prompt = shell.querySelector<HTMLElement>('[data-terminal-prompt]')!;
     const panel = shell.dataset.mode === 'panel';
+    const dock = shell.parentElement?.querySelector<HTMLElement>('[data-terminal-open]');
+    let cwd: 'home' | 'blog' | 'about' = 'home';
     const print = (value: string, className = '') => { const line = document.createElement('p'); line.className = className; line.textContent = value; output.appendChild(line); output.scrollTop = output.scrollHeight; };
     const commands: Record<string, string> = {
-      help: 'help       显示命令\nls         列出公开入口\nblog       打开完整博客\nabout      打开作者介绍\nls blog    列出文章\ncat <slug> 快速阅读文章\nclear      清屏\nexit       收起终端',
-      ls: 'blog/     about/\nREADME.md',
+      help: 'help       显示命令\nls         列出当前目录\ncd <dir>   进入公开目录\npwd        显示当前路径\nblog       打开完整博客\nabout      打开作者介绍\ncat <slug> 快速阅读文章\nclear      清屏\nexit       退出（可从底部重新打开）',
       about: '作者：Reuien\n方向：全栈开发 / 云原生\n正在做：记录软件、项目与长期实践',
-      'ls blog': '文章目录由公开文章 API 提供。输入 blog 打开完整博客。',
-      'pwd': panel ? '/home/guest/blog' : '/home/guest',
     };
+    const path = () => cwd === 'home' ? '/home/guest' : `/home/guest/${cwd}`;
+    const updatePrompt = () => { prompt.textContent = `guest@termbook:${cwd === 'home' ? '~' : `~/${cwd}`}$`; };
+    const closeTerminal = () => { shell.classList.remove('is-open'); dock?.classList.remove('is-hidden'); };
+    const openTerminal = () => { shell.classList.add('is-open'); dock?.classList.add('is-hidden'); input.focus(); };
     const navigate = (path: string) => { window.location.href = path; };
     const run = (raw: string) => {
       const command = raw.trim(); if (!command) return;
       print(`${prompt.textContent} ${command}`, 'terminal-input-line'); input.value = '';
       const [name, ...args] = command.split(/\s+/);
       if (name === 'clear') { output.replaceChildren(); return; }
+      if (name === 'exit') { closeTerminal(); return; }
+      if (name === 'pwd') { print(path()); return; }
+      if (name === 'ls') {
+        const target = args[0]?.replace(/\/$/, '');
+        if ((!target && cwd === 'home') || target === '.' || target === '~') print('blog/     about/\nREADME.md');
+        else if ((!target && cwd === 'blog') || target === 'blog') print('文章目录由公开文章 API 提供。输入 blog 打开完整博客。');
+        else if ((!target && cwd === 'about') || target === 'about') print('README.md');
+        else print(`ls: ${args[0]}: No such file or directory`, 'terminal-error');
+        return;
+      }
+      if (name === 'cd') {
+        const target = (args[0] ?? '~').replace(/\/$/, '');
+        if (target === '~' || target === '/home/guest' || target === '../' || target === '..') cwd = 'home';
+        else if (target === 'blog' || target === '~/blog' || target === '/home/guest/blog') cwd = 'blog';
+        else if (target === 'about' || target === '~/about' || target === '/home/guest/about') cwd = 'about';
+        else { print(`cd: ${args[0]}: No such file or directory`, 'terminal-error'); return; }
+        updatePrompt();
+        return;
+      }
       if (['vim','vi','nvim','mkdir','touch','rm','cp','mv','write','edit'].includes(name)) { print('Permission denied: public terminal is read-only.', 'terminal-error'); return; }
       if (name === 'blog') { navigate('/blog'); return; }
       if (name === 'about' || (name === 'open' && args[0] === 'about')) { navigate('/about'); return; }
@@ -52,9 +74,9 @@ const { mode = 'fullscreen' } = Astro.props;
       else print(`command not found: ${command}. 输入 help 查看帮助。`, 'terminal-error');
     };
     form.addEventListener('submit', event => { event.preventDefault(); run(input.value); });
-    document.addEventListener('keydown', event => { if ((event.ctrlKey || event.metaKey) && event.key === '`' && panel) { event.preventDefault(); shell.classList.toggle('is-open'); shell.parentElement?.querySelector<HTMLElement>('[data-terminal-open]')?.classList.toggle('is-hidden'); if (shell.classList.contains('is-open')) input.focus(); } if (event.key === 'Escape' && panel) shell.classList.remove('is-open'); });
-    shell.querySelector('[data-terminal-close]')?.addEventListener('click', () => shell.classList.remove('is-open'));
-    shell.parentElement?.querySelector('[data-terminal-open]')?.addEventListener('click', () => { shell.classList.add('is-open'); input.focus(); });
+    document.addEventListener('keydown', event => { if ((event.ctrlKey || event.metaKey) && event.key === '`' && panel) { event.preventDefault(); shell.classList.contains('is-open') ? closeTerminal() : openTerminal(); } if (event.key === 'Escape' && panel) closeTerminal(); });
+    shell.querySelector('[data-terminal-close]')?.addEventListener('click', closeTerminal);
+    dock?.addEventListener('click', openTerminal);
     if (!panel) input.focus();
   }
 </script>
