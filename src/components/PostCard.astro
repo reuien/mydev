@@ -2,9 +2,19 @@
 import type { PostListItem } from '../repositories/post-repository';
 interface Props { post: PostListItem; index?: number }
 const { post, index = 0 } = Astro.props;
+const publishedDate = post.publishedAt ? new Date(post.publishedAt) : null;
+const dateLabel = publishedDate && !Number.isNaN(publishedDate.getTime())
+  ? publishedDate.toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' }).replaceAll('/', '.')
+  : '未标注';
 ---
-<article class="card post-card">
-  <span class="card-index">{String(index + 1).padStart(2, '0')}</span>
-  <div><p class="eyebrow"><time datetime={post.publishedAt ?? undefined}>{post.publishedAt?.slice(0, 10)}</time></p><h3><a href={`/blog/${post.slug}`}>{post.title}</a></h3><p>{post.excerpt}</p></div>
-  <a class="arrow-link" href={`/blog/${post.slug}`} aria-label={`阅读：${post.title}`}>阅读 ↗</a>
+<article class="post-row">
+  <div class="post-date">
+    <span>{String(index + 1).padStart(2, '0')}</span>
+    <time datetime={post.publishedAt ?? undefined}>{dateLabel}</time>
+  </div>
+  <div class="post-summary">
+    <h3><a href={`/blog/${post.slug}`}>{post.title}</a></h3>
+    <p>{post.excerpt}</p>
+  </div>
+  <a class="post-read-link" href={`/blog/${post.slug}`} aria-label={`阅读：${post.title}`}>打开 <span aria-hidden="true">↗</span></a>
 </article>
