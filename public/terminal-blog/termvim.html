@@ -8,8 +8,8 @@
 <style>
   html,body{width:100%;height:100%;min-height:100%;margin:0;overflow:hidden;background:#1C1F1B;}
   /* 整个视口就是终端，没有任何页面容器 */
-  #term{width:100%;height:100dvh;min-height:0;padding:16px 18px;box-sizing:border-box;overflow:hidden;}
-  .xterm{height:100%;min-height:0;}
+  #term{position:fixed;top:16px;right:18px;bottom:16px;left:18px;min-width:0;min-height:0;overflow:hidden;}
+  .xterm{width:100%;height:100%;min-width:0;min-height:0;}
   .xterm-viewport{height:100%!important;background:transparent!important;scrollbar-width:thin;overflow-y:auto!important;overscroll-behavior:contain;}
   .xterm .xterm-viewport::-webkit-scrollbar{width:8px;}
   .xterm .xterm-viewport::-webkit-scrollbar-thumb{background:#3A4038;}
@@ -483,7 +483,20 @@ const Fit = (window.FitAddon && window.FitAddon.FitAddon) || window.FitAddon;
 const fit = new Fit();
 term.loadAddon(fit);
 term.open(document.getElementById('term'));
-try { fit.fit(); } catch(e){}
+
+function safeFit(){
+  fit.fit();
+  const container = document.getElementById('term');
+  const cell = term._core && term._core._renderService && term._core._renderService.dimensions.css.cell;
+  if (!container || !cell || !cell.width || !cell.height) return;
+  let cols = term.cols;
+  let rows = term.rows;
+  while (cols > 2 && cols * cell.width > container.clientWidth) cols--;
+  while (rows > 1 && rows * cell.height > container.clientHeight) rows--;
+  if (cols !== term.cols || rows !== term.rows) term.resize(cols, rows);
+}
+
+try { safeFit(); } catch(e){}
 
 // iframe 首次布局、字体加载和浏览器地址栏收起都会改变可用高度。
 // 只在 open() 后 fit 一次会导致底部 prompt 被截断，因此统一走稳定的重排入口。
@@ -491,7 +504,7 @@ let fitTimer;
 function fitTerminal(){
   clearTimeout(fitTimer);
   fitTimer = setTimeout(() => {
-    try { fit.fit(); term.scrollToBottom(); } catch(e){}
+    try { safeFit(); term.scrollToBottom(); } catch(e){}
     if (window.VimEditor) VimEditor.resize();
   }, 0);
 }

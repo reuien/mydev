@@ -94,6 +94,28 @@ test('mobile layout has no horizontal overflow', async ({ page }) => {
   expect(overflow).toBe(false);
 });
 
+test('homepage terminal stays inside its measured container', async ({ page }) => {
+  for (const viewport of [{ width: 360, height: 640 }, { width: 768, height: 720 }, { width: 1400, height: 880 }]) {
+    await page.setViewportSize(viewport);
+    await page.goto('/');
+    const terminal = page.locator('iframe').first().contentFrame();
+    await terminal.locator('.xterm-screen').waitFor({ state: 'attached' });
+    const bounds = await terminal.locator('#term').evaluate((container) => {
+      const frame = container.getBoundingClientRect();
+      const surfaces = [...container.querySelectorAll('.xterm-screen, .xterm-viewport')].map((element) =>
+        element.getBoundingClientRect(),
+      );
+      return {
+        documentOverflowX: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+        documentOverflowY: document.documentElement.scrollHeight - document.documentElement.clientHeight,
+        rightOverflow: Math.max(0, ...surfaces.map((surface) => surface.right - frame.right)),
+        bottomOverflow: Math.max(0, ...surfaces.map((surface) => surface.bottom - frame.bottom)),
+      };
+    });
+    expect(bounds).toEqual({ documentOverflowX: 0, documentOverflowY: 0, rightOverflow: 0, bottomOverflow: 0 });
+  }
+});
+
 test('homepage copy and topology fit narrow, tablet, and desktop screens', async ({ page }) => {
   for (const width of [360, 768, 1440]) {
     await page.setViewportSize({ width, height: 960 });
