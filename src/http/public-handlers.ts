@@ -1,8 +1,8 @@
-import type { PostService } from '../application/post-service';
 import type { PostGroupService } from '../application/post-group-service';
 import type { ProjectService } from '../application/project-service';
 import type { Post } from '../domain/post';
 import { slugSchema } from '../schemas/common';
+import type { PostQueryService } from '../services/post-query';
 import { handleRequest } from '../middleware/error-handler';
 import { errorResponse, successResponse } from './response';
 
@@ -29,7 +29,7 @@ function parsePagination(request: Request): { page: number; pageSize: number } |
   return { page, pageSize };
 }
 
-export function handlePublicPostList(request: Request, service: PostService): Promise<Response> {
+export function handlePublicPostList(request: Request, service: PostQueryService): Promise<Response> {
   return handleRequest(request, async (requestId) => {
     const pagination = parsePagination(request);
     if (!pagination) return errorResponse(400, 'VALIDATION_ERROR', '分页参数不符合要求', requestId);
@@ -48,7 +48,7 @@ export function handlePublicPostGroupList(request: Request, service: PostGroupSe
   return handleRequest(request, async (requestId) => successResponse(await service.list(), requestId));
 }
 
-export function handlePublicPostDetail(request: Request, service: PostService, slug: string): Promise<Response> {
+export function handlePublicPostDetail(request: Request, service: PostQueryService, slug: string): Promise<Response> {
   return handleRequest(request, async (requestId) => {
     if (!slugSchema.safeParse(slug).success) return errorResponse(404, 'NOT_FOUND', '内容不存在', requestId);
     const post = await service.getPublicBySlug(slug);

@@ -7,13 +7,17 @@ import type {
   UpdatePost,
 } from '../repositories/post-repository';
 import type { CreatePostInput } from '../schemas/post';
+import type { PostQueryInvalidator } from '../services/post-query';
 import { defaultServiceDependencies, type ServiceDependencies } from './ports';
 import { createIdempotencyOperation } from './idempotency-service';
+
+const noCacheInvalidation: PostQueryInvalidator = { invalidate: async () => undefined };
 
 export class PostService {
   constructor(
     private readonly repository: PostRepository,
     private readonly dependencies: ServiceDependencies = defaultServiceDependencies,
+    private readonly queryCache: PostQueryInvalidator = noCacheInvalidation,
   ) {}
 
   async create(input: CreatePostInput): Promise<Post> {
@@ -57,8 +61,10 @@ export class PostService {
     return this.repository.listPublic(page);
   }
 
-  update(id: string, input: UpdatePost): Promise<Post | null> {
-    return this.repository.updateContent(id, input, this.dependencies.now());
+  async update(id: string, input: UpdatePost): Promise<Post | null> {
+    const post = await this.repository.updateContent(id, input, this.dependencies.now());
+    if (post) await this.invalidateQueries();
+    return post;
   }
 
   publish(id: string): Promise<Post | null> {
@@ -69,11 +75,23 @@ export class PostService {
     return this.transition(id, 'draft');
   }
 
-  delete(id: string): Promise<boolean> {
-    return this.repository.delete(id);
+  async delete(id: string): Promise<boolean> {
+    const deleted = await this.repository.delete(id);
+    if (deleted) await this.invalidateQueries();
+    return deleted;
   }
 
-  private transition(id: string, target: PostStatus): Promise<Post | null> {
-    return this.repository.transitionStatus(id, target, this.dependencies.now());
+  private async transition(id: string, target: PostStatus): Promise<Post | null> {
+    const post = await this.repository.transitionStatus(id, target, this.dependencies.now());
+    if (post) await this.invalidateQueries();
+    return post;
+  }
+
+  private async invalidateQueries(): Promise<void> {
+    try {
+      await this.queryCache.invalidate();
+    } catch {
+      // Content writes remain successful if the optional edge cache is unavailable.
+    }
   }
 }

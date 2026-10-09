@@ -1,18 +1,32 @@
 ---
 import { env } from 'cloudflare:workers';
 import PostCard from '../../components/PostCard.astro';
+import { StorageUnavailableError } from '../../domain/errors';
+import { NO_STORE, PUBLIC_CACHE_CONTROL } from '../../http/response';
 import { createServicesFromEnvironment } from '../../http/context';
 import SiteLayout from '../../layouts/SiteLayout.astro';
 const page = Math.max(1, Number(Astro.url.searchParams.get('page') ?? 1) || 1); const pageSize=10;
 const services = createServicesFromEnvironment(env);
-const [result, groups] = await Promise.all([
-  services.posts.listPublic({limit:pageSize,offset:(page-1)*pageSize}),
-  services.postGroups.list(),
-]);
+let unavailable = false;
+let blogPage;
+try {
+  blogPage = await services.postQueries.listBlogPage({limit:pageSize,offset:(page-1)*pageSize});
+  Astro.response.headers.set('Cache-Control', PUBLIC_CACHE_CONTROL);
+} catch (error) {
+  if (!(error instanceof StorageUnavailableError)) throw error;
+  unavailable = true;
+  Astro.response.status = 503;
+  Astro.response.headers.set('Cache-Control', NO_STORE);
+}
+const result = blogPage ?? { items: [], total: 0 };
+const groups = blogPage?.groups ?? [];
 const groupNames = new Map(groups.map((group) => [group.id, group.name]));
 const pages=Math.ceil(result.total/pageSize);
 ---
-<SiteLayout title="Writing — MyDev" description="关于软件、产品打磨与公开构建的记录。">
+<SiteLayout title={unavailable ? 'Service unavailable — MyDev' : 'Writing — MyDev'} description="关于软件、产品打磨与公开构建的记录。">
+  {unavailable ? (
+    <header class="page-head"><p class="eyebrow">503 / Temporary fault</p><h1>Signal lost.</h1><p>文章服务暂时不可用，请稍后重试。</p></header>
+  ) : <>
   <header class="page-head blog-index-head">
     <div>
       <h1>Writing</h1>
@@ -34,4 +48,5 @@ const pages=Math.ceil(result.total/pageSize);
       </nav>
     )}
   </section>
+  </>}
 </SiteLayout>

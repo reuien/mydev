@@ -5,4 +5,4 @@ import { createServicesFromEnvironment } from '../../../../http/context';
 import { handlePublicPostDetail } from '../../../../http/public-handlers';
 
 export const GET: APIRoute = ({ params, request }) =>
-  handlePublicPostDetail(request, createServicesFromEnvironment(env).posts, params.slug ?? '');
+  handlePublicPostDetail(request, createServicesFromEnvironment(env).postQueries, params.slug ?? '');

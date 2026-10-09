@@ -1,4 +1,3 @@
-import type { PostService } from '../../src/application/post-service';
 import type { ProjectService } from '../../src/application/project-service';
 import {
   handlePublicPostDetail,
@@ -6,15 +5,16 @@ import {
   handlePublicProjectDetail,
   handlePublicProjectList,
 } from '../../src/http/public-handlers';
+import type { PostQueryService } from '../../src/services/post-query';
 
-export function createTestApp(services: { posts: PostService; projects: ProjectService }) {
+export function createTestApp(services: { postQueries: PostQueryService; projects: ProjectService }) {
   return {
     fetch(request: Request): Promise<Response> {
       const pathname = new URL(request.url).pathname;
-      if (pathname === '/api/public/posts') return handlePublicPostList(request, services.posts);
+      if (pathname === '/api/public/posts') return handlePublicPostList(request, services.postQueries);
       if (pathname === '/api/public/projects') return handlePublicProjectList(request, services.projects);
       if (pathname.startsWith('/api/public/posts/')) {
-        return handlePublicPostDetail(request, services.posts, decodeURIComponent(pathname.slice(18)));
+        return handlePublicPostDetail(request, services.postQueries, decodeURIComponent(pathname.slice(18)));
       }
       if (pathname.startsWith('/api/public/projects/')) {
         return handlePublicProjectDetail(request, services.projects, decodeURIComponent(pathname.slice(21)));

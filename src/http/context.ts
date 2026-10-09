@@ -7,12 +7,17 @@ import { D1PostRepository } from '../repositories/d1/post-repository';
 import { D1PostGroupRepository } from '../repositories/d1/post-group-repository';
 import { D1ProjectRepository } from '../repositories/d1/project-repository';
 import type { AuthorRateLimiter } from '../middleware/rate-limit';
+import { createPostQueryCache, PostQueryService } from '../services/post-query';
 import type { AuthorHandlerContext } from './author-handlers';
 
 export function createServices(database: D1Database) {
+  const postRepository = new D1PostRepository(database);
+  const postGroupRepository = new D1PostGroupRepository(database);
+  const postQueryCache = createPostQueryCache();
   return {
-    posts: new PostService(new D1PostRepository(database)),
-    postGroups: new PostGroupService(new D1PostGroupRepository(database)),
+    posts: new PostService(postRepository, undefined, postQueryCache),
+    postQueries: new PostQueryService(postRepository, postGroupRepository, postQueryCache),
+    postGroups: new PostGroupService(postGroupRepository),
     projects: new ProjectService(new D1ProjectRepository(database)),
   };
 }

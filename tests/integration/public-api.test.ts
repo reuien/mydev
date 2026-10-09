@@ -1,18 +1,18 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import type { PostService } from '../../src/application/post-service';
 import type { ProjectService } from '../../src/application/project-service';
 import { StorageUnavailableError } from '../../src/domain/errors';
+import type { PostQueryService } from '../../src/services/post-query';
 import { postFixture } from '../fixtures/posts';
 import { projectFixture } from '../fixtures/projects';
 import { createTestApp } from '../helpers/test-app';
 
 function services() {
   return {
-    posts: {
+    postQueries: {
       listPublic: vi.fn().mockResolvedValue({ items: [], total: 0 }),
       getPublicBySlug: vi.fn().mockResolvedValue(null),
-    } as unknown as PostService,
+    } as unknown as PostQueryService,
     projects: {
       listPublic: vi.fn().mockResolvedValue([]),
       getPublicBySlug: vi.fn().mockResolvedValue(null),
@@ -23,7 +23,7 @@ function services() {
 describe('public API', () => {
   it('returns normalized post pagination, envelope, cache, and request ID', async () => {
     const apiServices = services();
-    vi.mocked(apiServices.posts.listPublic).mockResolvedValue({
+    vi.mocked(apiServices.postQueries.listPublic).mockResolvedValue({
       items: [
         {
           id: '00000000-0000-4000-8000-000000000001',
@@ -48,7 +48,7 @@ describe('public API', () => {
     expect(response.headers.get('Cache-Control')).toBe('public, max-age=60, s-maxage=300, stale-while-revalidate=30');
     expect(response.headers.get('X-Request-Id')).toBe('818ec24d-92bf-4e24-a2f3-36d22acdb769');
     await expect(response.json()).resolves.toMatchObject({ meta: { page: 2, pageSize: 10, total: 11, totalPages: 2 } });
-    expect(apiServices.posts.listPublic).toHaveBeenCalledWith({ limit: 10, offset: 10 });
+    expect(apiServices.postQueries.listPublic).toHaveBeenCalledWith({ limit: 10, offset: 10 });
   });
 
   it.each([
@@ -68,7 +68,7 @@ describe('public API', () => {
 
   it('returns a public post without internal fields', async () => {
     const apiServices = services();
-    vi.mocked(apiServices.posts.getPublicBySlug).mockResolvedValue(
+    vi.mocked(apiServices.postQueries.getPublicBySlug).mockResolvedValue(
       postFixture({ status: 'published', publishedAt: '2026-09-07T00:00:00.000Z' }),
     );
     const response = await createTestApp(apiServices).fetch(new Request('https://example.com/api/public/posts/first-post'));
@@ -106,7 +106,7 @@ describe('public API', () => {
 
   it('maps storage failures to a request-correlated 503', async () => {
     const apiServices = services();
-    vi.mocked(apiServices.posts.listPublic).mockRejectedValue(new StorageUnavailableError('offline'));
+    vi.mocked(apiServices.postQueries.listPublic).mockRejectedValue(new StorageUnavailableError('offline'));
     const response = await createTestApp(apiServices).fetch(new Request('https://example.com/api/public/posts'));
     const body = (await response.json()) as { error: { code: string; requestId: string } };
 

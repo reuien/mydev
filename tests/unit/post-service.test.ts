@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { PostService } from '../../src/application/post-service';
 import type { PostRepository } from '../../src/repositories/post-repository';
+import type { PostQueryInvalidator } from '../../src/services/post-query';
 import { postFixture } from '../fixtures/posts';
 
 function repositoryMock(): PostRepository {
@@ -62,14 +63,41 @@ describe('PostService', () => {
     const repository = repositoryMock();
     const published = postFixture({ status: 'published', publishedAt: '2026-09-07T01:00:00.000Z' });
     vi.mocked(repository.transitionStatus).mockResolvedValue(published);
-    const service = new PostService(repository, {
-      now: () => '2026-09-07T01:00:00.000Z',
-      generateId: () => crypto.randomUUID(),
-    });
+    const invalidator: PostQueryInvalidator = { invalidate: vi.fn().mockResolvedValue(undefined) };
+    const service = new PostService(
+      repository,
+      {
+        now: () => '2026-09-07T01:00:00.000Z',
+        generateId: () => crypto.randomUUID(),
+      },
+      invalidator,
+    );
 
     await expect(service.publish(published.id)).resolves.toEqual(published);
     await service.unpublish(published.id);
     expect(repository.transitionStatus).toHaveBeenNthCalledWith(1, published.id, 'published', '2026-09-07T01:00:00.000Z');
     expect(repository.transitionStatus).toHaveBeenNthCalledWith(2, published.id, 'draft', '2026-09-07T01:00:00.000Z');
+    expect(invalidator.invalidate).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not fail a successful write when cache invalidation is unavailable', async () => {
+    const repository = repositoryMock();
+    const published = postFixture({ status: 'published', publishedAt: '2026-09-07T01:00:00.000Z' });
+    vi.mocked(repository.updateContent).mockResolvedValue(published);
+    const service = new PostService(
+      repository,
+      { now: () => '2026-09-07T02:00:00.000Z', generateId: () => crypto.randomUUID() },
+      { invalidate: vi.fn().mockRejectedValue(new Error('cache offline')) },
+    );
+
+    await expect(
+      service.update(published.id, {
+        title: published.title,
+        excerpt: published.excerpt,
+        bodyMarkdown: published.bodyMarkdown,
+        coverImageUrl: published.coverImageUrl,
+        groupId: published.groupId,
+      }),
+    ).resolves.toEqual(published);
   });
 });

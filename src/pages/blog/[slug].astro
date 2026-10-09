@@ -1,16 +1,28 @@
 ---
 import { env } from 'cloudflare:workers';
+import { StorageUnavailableError } from '../../domain/errors';
 import { createServicesFromEnvironment } from '../../http/context';
+import { NO_STORE, PUBLIC_CACHE_CONTROL } from '../../http/response';
 import { renderMarkdownDocument } from '../../lib/markdown';
 import SiteLayout from '../../layouts/SiteLayout.astro';
-const post=await createServicesFromEnvironment(env).posts.getPublicBySlug(Astro.params.slug??'');
-if(!post) Astro.response.status=404;
+let unavailable = false;
+let post = null;
+try {
+  post=await createServicesFromEnvironment(env).postQueries.getPublicBySlug(Astro.params.slug??'');
+  Astro.response.headers.set('Cache-Control', post ? PUBLIC_CACHE_CONTROL : NO_STORE);
+} catch (error) {
+  if (!(error instanceof StorageUnavailableError)) throw error;
+  unavailable = true;
+  Astro.response.status=503;
+  Astro.response.headers.set('Cache-Control', NO_STORE);
+}
+if(!post && !unavailable) Astro.response.status=404;
 const document=post ? await renderMarkdownDocument(post.bodyMarkdown) : { html: '', headings: [] };
 const readingMinutes = post ? Math.max(1, Math.ceil(post.bodyMarkdown.trim().split(/\s+/).filter(Boolean).length / 180)) : 0;
 const publishedDate = post?.publishedAt ? new Date(post.publishedAt) : null;
 ---
-<SiteLayout title={post?`${post.title} — MyDev`:'Post not found — MyDev'} description={post?.excerpt??'请求的文章不存在。'}>
-  {post ? <>
+<SiteLayout title={post?`${post.title} — MyDev`:unavailable?'Service unavailable — MyDev':'Post not found — MyDev'} description={post?.excerpt??'请求的文章不存在。'}>
+  {unavailable ? <header class="page-head"><p class="eyebrow">503 / Temporary fault</p><h1>Signal lost.</h1><p>文章服务暂时不可用，请稍后重试。</p></header> : post ? <>
     <header class="article-head">
       <a class="back-link" href="/blog">← 返回文章列表</a>
       <p class="eyebrow">Writing / 文章</p>

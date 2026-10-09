@@ -94,6 +94,21 @@ test('mobile layout has no horizontal overflow', async ({ page }) => {
   expect(overflow).toBe(false);
 });
 
+test('blog list and published article render through the public query path', async ({ page }) => {
+  const listResponse = await page.goto('/blog');
+  expect(listResponse?.status()).toBe(200);
+  expect(listResponse?.headers()['cache-control']).toContain('s-maxage=300');
+  await expect(page.getByRole('heading', { name: 'Writing' })).toBeVisible();
+
+  const articleLink = page.getByRole('link', { name: 'Primary/Backup Replication', exact: true });
+  await expect(articleLink).toBeVisible();
+  const detailResponse = await page.goto(await articleLink.getAttribute('href') ?? '');
+  expect(detailResponse?.status()).toBe(200);
+  expect(detailResponse?.headers()['cache-control']).toContain('s-maxage=300');
+  await expect(page.getByRole('heading', { name: 'Primary/Backup Replication' })).toBeVisible();
+  await expect(page.locator('#article-content')).toBeVisible();
+});
+
 test('homepage terminal stays inside its measured container', async ({ page }) => {
   for (const viewport of [{ width: 360, height: 640 }, { width: 768, height: 720 }, { width: 1400, height: 880 }]) {
     await page.setViewportSize(viewport);
