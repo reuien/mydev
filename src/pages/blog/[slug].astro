@@ -34,7 +34,8 @@ const publishedDate = post?.publishedAt ? new Date(post.publishedAt) : null;
       </div>
     </header>
     <div class="article-layout">
-      <aside class="article-rail" aria-label="文章章节">
+      <aside class="article-rail" aria-label="文章章节" data-floating-outline>
+        <button type="button" class="outline-drag-handle" aria-label="拖动章节窗，方向键调整位置" data-outline-drag>⠿ 拖动目录</button>
         <details class="article-outline" open>
           <summary><span>章节分析</span><b>{document.headings.length}</b></summary>
           {document.headings.length ? (
@@ -56,6 +57,48 @@ const publishedDate = post?.publishedAt ? new Date(post.publishedAt) : null;
 </SiteLayout>
 
 <script>
+  const panel = document.querySelector<HTMLElement>('[data-floating-outline]');
+  const handle = panel?.querySelector<HTMLButtonElement>('[data-outline-drag]');
+  if (panel && handle) {
+    const position = (x: number, y: number) => {
+      const bounds = panel.getBoundingClientRect();
+      panel.style.left = `${Math.max(8, Math.min(x, window.innerWidth - bounds.width - 8))}px`;
+      panel.style.top = `${Math.max(8, Math.min(y, window.innerHeight - bounds.height - 8))}px`;
+      panel.style.right = 'auto';
+      panel.style.bottom = 'auto';
+    };
+    let drag: { id: number; x: number; y: number } | null = null;
+    handle.addEventListener('pointerdown', (event) => {
+      if (event.button !== 0) return;
+      const bounds = panel.getBoundingClientRect();
+      drag = { id: event.pointerId, x: event.clientX - bounds.left, y: event.clientY - bounds.top };
+      handle.setPointerCapture(event.pointerId);
+      panel.classList.add('is-dragging');
+    });
+    handle.addEventListener('pointermove', (event) => {
+      if (drag?.id === event.pointerId) position(event.clientX - drag.x, event.clientY - drag.y);
+    });
+    const finish = () => { drag = null; panel.classList.remove('is-dragging'); };
+    handle.addEventListener('lostpointercapture', finish);
+    handle.addEventListener('pointerup', finish);
+    handle.addEventListener('pointercancel', finish);
+    handle.addEventListener('keydown', (event) => {
+      const delta: Record<string, [number, number]> = { ArrowLeft: [-16, 0], ArrowRight: [16, 0], ArrowUp: [0, -16], ArrowDown: [0, 16] };
+      const step = delta[event.key];
+      if (!step) return;
+      event.preventDefault();
+      const bounds = panel.getBoundingClientRect();
+      position(bounds.left + step[0], bounds.top + step[1]);
+    });
+    const clamp = () => {
+      if (!panel.style.left) return;
+      const bounds = panel.getBoundingClientRect();
+      position(bounds.left, bounds.top);
+    };
+    window.addEventListener('resize', clamp);
+    new ResizeObserver(clamp).observe(panel);
+  }
+
   const renderMermaid = async () => {
     const blocks = document.querySelectorAll<HTMLElement>('pre > code.language-mermaid');
     if (!blocks.length) return;
