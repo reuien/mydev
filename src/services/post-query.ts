@@ -18,7 +18,9 @@ export interface PostQueryCache extends PostQueryInvalidator {
 export type BlogPage = PageResult<PostListItem> & { groups: PostGroup[] };
 
 export class MemoryPostQueryCache implements PostQueryCache {
-  private generation = crypto.randomUUID();
+  // This cache is also instantiated at module scope. Workers only permit
+  // random number generation inside a request, so use a local counter.
+  private generation = 0;
   private readonly entries = new Map<string, CacheEntry<unknown>>();
 
   get<T>(key: string): Promise<CacheEntry<T> | null> {
@@ -31,7 +33,7 @@ export class MemoryPostQueryCache implements PostQueryCache {
   }
 
   invalidate(): Promise<void> {
-    this.generation = crypto.randomUUID();
+    this.generation += 1;
     return Promise.resolve();
   }
 }

@@ -14,7 +14,8 @@ export const onRequest = defineMiddleware(async (context, next) => {
   const response = await next();
   if (admin) response.headers.set('Cache-Control', 'private, no-store');
   if (response.headers.get('Content-Type')?.includes('text/html')) {
-    response.headers.set('Content-Security-Policy', "default-src 'self'; base-uri 'none'; object-src 'none'; frame-ancestors 'none'; frame-src 'self' https://giscus.app; form-action 'self'; img-src 'self' https: data:; font-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' https://giscus.app; connect-src 'self' https://giscus.app; upgrade-insecure-requests");
+    const upgradeRequests = context.url.protocol === 'https:' ? '; upgrade-insecure-requests' : '';
+    response.headers.set('Content-Security-Policy', "default-src 'self'; base-uri 'none'; object-src 'none'; frame-ancestors 'none'; frame-src 'self' https://giscus.app; form-action 'self'; img-src 'self' https: data:; font-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' https://giscus.app; connect-src 'self' https://giscus.app" + upgradeRequests);
   }
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   response.headers.set('X-Content-Type-Options', 'nosniff');

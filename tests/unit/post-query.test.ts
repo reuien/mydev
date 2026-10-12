@@ -25,6 +25,24 @@ function groupRepository(): PostGroupRepository {
 }
 
 describe('PostQueryService', () => {
+  it('initializes the module cache without random generation outside a Worker request', async () => {
+    const randomUUID = vi.spyOn(crypto, 'randomUUID').mockImplementation(() => {
+      throw new Error('Random generation is disallowed in Worker global scope');
+    });
+    try {
+      vi.resetModules();
+      const { MemoryPostQueryCache: Cache } = await import('../../src/services/post-query');
+      const cache = new Cache();
+      await cache.set('list', { value: 'old', freshUntil: 1_000 });
+      await expect(cache.get('list')).resolves.toEqual({ value: 'old', freshUntil: 1_000 });
+      await cache.invalidate();
+      await expect(cache.get('list')).resolves.toBeNull();
+      expect(randomUUID).not.toHaveBeenCalled();
+    } finally {
+      randomUUID.mockRestore();
+    }
+  });
+
   it('shares fresh public detail results instead of querying storage twice', async () => {
     const posts = postRepository();
     const published = postFixture({ status: 'published', publishedAt: '2026-09-07T00:00:00.000Z' });
