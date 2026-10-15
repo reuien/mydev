@@ -5,7 +5,10 @@ import { StorageUnavailableError } from '../../domain/errors';
 import { NO_STORE, PUBLIC_CACHE_CONTROL } from '../../http/response';
 import { createServicesFromEnvironment } from '../../http/context';
 import SiteLayout from '../../layouts/SiteLayout.astro';
-const page = Math.max(1, Number(Astro.url.searchParams.get('page') ?? 1) || 1); const pageSize=10;
+const pageSize = 10;
+const requestedPage = Number(Astro.url.searchParams.get('page') ?? 1);
+const page = Number.isSafeInteger(requestedPage) && requestedPage >= 1
+  && requestedPage <= Math.floor(Number.MAX_SAFE_INTEGER / pageSize) ? requestedPage : 1;
 const services = createServicesFromEnvironment(env);
 let unavailable = false;
 let blogPage;
