@@ -22,6 +22,7 @@
 <script src="xterm.min.js"></script>
 <script src="addon-fit.js"></script>
 <script src="vim.js"></script>
+<script src="cursor-smear.js"></script>
 <script>
 /* ============================================================
    0. ANSI 工具
@@ -483,6 +484,7 @@ const Fit = (window.FitAddon && window.FitAddon.FitAddon) || window.FitAddon;
 const fit = new Fit();
 term.loadAddon(fit);
 term.open(document.getElementById('term'));
+window.installTerminalCursorSmear(term);
 
 function safeFit(){
   fit.fit();
