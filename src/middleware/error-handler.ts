@@ -1,3 +1,4 @@
+import { logRequestError } from './request-log';
 import { StorageUnavailableError } from '../domain/errors';
 import { errorResponse } from '../http/response';
 import { requestIdFor } from './request-id';
@@ -10,6 +11,7 @@ export async function handleRequest(
   try {
     return await operation(requestId);
   } catch (error) {
+    logRequestError(request, error, 'public-api');
     if (error instanceof StorageUnavailableError) {
       return errorResponse(503, 'STORAGE_UNAVAILABLE', '存储服务暂时不可用', requestId);
     }

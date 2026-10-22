@@ -2,7 +2,9 @@ import { defineMiddleware } from 'astro:middleware';
 import { env } from 'cloudflare:workers';
 import { authenticateAdmin, adminRequestIsSameOrigin, isAdminPath } from './middleware/admin-auth';
 
-export const onRequest = defineMiddleware(async (context, next) => {
+import { withRequestLogging } from './middleware/request-log';
+
+export const onRequest = defineMiddleware(async (context, next) => withRequestLogging(context.request, async () => {
   const admin = isAdminPath(context.url.pathname);
   if (admin) {
     const actor = await authenticateAdmin(context.request, env);
@@ -11,7 +13,11 @@ export const onRequest = defineMiddleware(async (context, next) => {
     }
     context.locals.adminEmail = actor;
   }
-  const response = await next();
+  const upstream = await next();
+  // Redirect/fetch response headers may be immutable. Decorate a mutable copy.
+  const response = new Response(upstream.body, {
+    status: upstream.status, statusText: upstream.statusText, headers: upstream.headers,
+  });
   if (admin) response.headers.set('Cache-Control', 'private, no-store');
   if (response.headers.get('Content-Type')?.includes('text/html')) {
     const upgradeRequests = context.url.protocol === 'https:' ? '; upgrade-insecure-requests' : '';
@@ -22,4 +28,4 @@ export const onRequest = defineMiddleware(async (context, next) => {
   response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
   response.headers.set('Cross-Origin-Opener-Policy', 'same-origin');
   return response;
-});
+}));

@@ -18,6 +18,7 @@ export class PostService {
     private readonly repository: PostRepository,
     private readonly dependencies: ServiceDependencies = defaultServiceDependencies,
     private readonly queryCache: PostQueryInvalidator = noCacheInvalidation,
+    private readonly reportCacheFailure: (error: unknown) => void = () => undefined,
   ) {}
 
   async create(input: CreatePostInput): Promise<Post> {
@@ -90,7 +91,8 @@ export class PostService {
   private async invalidateQueries(): Promise<void> {
     try {
       await this.queryCache.invalidate();
-    } catch {
+    } catch (error) {
+      try { this.reportCacheFailure(error); } catch { /* Optional diagnostics. */ }
       // Content writes remain successful if the optional edge cache is unavailable.
     }
   }

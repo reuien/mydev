@@ -1,3 +1,4 @@
+import { logRequestError } from '../middleware/request-log';
 import { ZodError, type ZodType } from 'zod';
 
 import type { PostService } from '../application/post-service';
@@ -72,6 +73,7 @@ async function authorize(
     if (error instanceof IdempotencyConflictError) {
       return errorResponse(409, 'IDEMPOTENCY_CONFLICT', '幂等键已用于其他请求', requestId);
     }
+    logRequestError(request, error, 'author-api');
     if (error instanceof StorageUnavailableError) {
       return errorResponse(503, 'STORAGE_UNAVAILABLE', '存储服务暂时不可用', requestId);
     }

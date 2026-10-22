@@ -121,7 +121,7 @@ export class D1ProjectRepository implements ProjectRepository {
       const statements = [];
       if (existing) {
         statements.push(
-          this.database.prepare("DELETE FROM idempotency_keys WHERE scope = 'create_project' AND key = ?").bind(operation.key),
+          this.database.prepare("DELETE FROM idempotency_keys WHERE scope = 'create_project' AND key = ? AND expires_at <= ?").bind(operation.key, operation.createdAt),
         );
       }
       statements.push(
@@ -156,7 +156,23 @@ export class D1ProjectRepository implements ProjectRepository {
             operation.expiresAt,
           ),
       );
-      await this.database.batch(statements);
+      try {
+        await this.database.batch(statements);
+      } catch (writeError) {
+        // Another request can win after our initial lookup. The batch is atomic;
+        // re-read its committed idempotency result before translating the error.
+        let winner;
+        try {
+          winner = await this.database.prepare(
+            "SELECT request_hash, response_body, expires_at FROM idempotency_keys WHERE scope = 'create_project' AND key = ?",
+          ).bind(operation.key).first<{ request_hash: string; response_body: string; expires_at: string }>();
+        } catch {
+          throw writeError;
+        }
+        if (!winner || winner.expires_at <= operation.createdAt) throw writeError;
+        if (winner.request_hash !== operation.requestHash) throw new IdempotencyConflictError('Idempotency key conflict');
+        return { resource: JSON.parse(winner.response_body) as Project, replayed: true };
+      }
       return { resource: input, replayed: false };
     } catch (error) {
       if (error instanceof IdempotencyConflictError) throw error;

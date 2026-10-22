@@ -5,4 +5,4 @@ import { createServicesFromEnvironment } from '../../../../http/context';
 import { handlePublicProjectList } from '../../../../http/public-handlers';
 
 export const GET: APIRoute = ({ request }) =>
-  handlePublicProjectList(request, createServicesFromEnvironment(env).projects);
+  handlePublicProjectList(request, createServicesFromEnvironment(env, request).projects);

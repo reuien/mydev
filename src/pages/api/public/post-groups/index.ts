@@ -5,4 +5,4 @@ import { createServicesFromEnvironment } from '../../../../http/context';
 import { handlePublicPostGroupList } from '../../../../http/public-handlers';
 
 export const GET: APIRoute = ({ request }) =>
-  handlePublicPostGroupList(request, createServicesFromEnvironment(env).postGroups);
+  handlePublicPostGroupList(request, createServicesFromEnvironment(env, request).postGroups);

@@ -1,4 +1,5 @@
 ---
+import { logRequestError } from '../../middleware/request-log';
 import { env } from 'cloudflare:workers';
 import PostCard from '../../components/PostCard.astro';
 import { StorageUnavailableError } from '../../domain/errors';
@@ -9,7 +10,7 @@ const pageSize = 10;
 const requestedPage = Number(Astro.url.searchParams.get('page') ?? 1);
 const page = Number.isSafeInteger(requestedPage) && requestedPage >= 1
   && requestedPage <= Math.floor(Number.MAX_SAFE_INTEGER / pageSize) ? requestedPage : 1;
-const services = createServicesFromEnvironment(env);
+const services = createServicesFromEnvironment(env, Astro.request);
 let unavailable = false;
 let blogPage;
 try {
@@ -17,6 +18,7 @@ try {
   Astro.response.headers.set('Cache-Control', PUBLIC_CACHE_CONTROL);
 } catch (error) {
   if (!(error instanceof StorageUnavailableError)) throw error;
+  logRequestError(Astro.request, error, 'blog-page');
   unavailable = true;
   Astro.response.status = 503;
   Astro.response.headers.set('Cache-Control', NO_STORE);

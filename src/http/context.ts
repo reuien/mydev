@@ -1,3 +1,4 @@
+import { logRequestError } from '../middleware/request-log';
 import type { D1Database } from '@cloudflare/workers-types';
 
 import { PostService } from '../application/post-service';
@@ -10,20 +11,23 @@ import type { AuthorRateLimiter } from '../middleware/rate-limit';
 import { createPostQueryCache, PostQueryService } from '../services/post-query';
 import type { AuthorHandlerContext } from './author-handlers';
 
-export function createServices(database: D1Database) {
+export function createServices(database: D1Database, request?: Request) {
   const postRepository = new D1PostRepository(database);
   const postGroupRepository = new D1PostGroupRepository(database);
   const postQueryCache = createPostQueryCache();
+  const report = (error: unknown, operation = 'cache-invalidate') => {
+    if (request) logRequestError(request, error, operation, 'warn');
+  };
   return {
-    posts: new PostService(postRepository, undefined, postQueryCache),
-    postQueries: new PostQueryService(postRepository, postGroupRepository, postQueryCache),
+    posts: new PostService(postRepository, undefined, postQueryCache, report),
+    postQueries: new PostQueryService(postRepository, postGroupRepository, postQueryCache, undefined, undefined, report),
     postGroups: new PostGroupService(postGroupRepository),
     projects: new ProjectService(new D1ProjectRepository(database)),
   };
 }
 
-export function createServicesFromEnvironment(environment: unknown) {
-  return createServices((environment as { DB: D1Database }).DB);
+export function createServicesFromEnvironment(environment: unknown, request?: Request) {
+  return createServices((environment as { DB: D1Database }).DB, request);
 }
 
 export function createAuthorContext(environment: unknown, request: Request): AuthorHandlerContext {
@@ -33,7 +37,7 @@ export function createAuthorContext(environment: unknown, request: Request): Aut
     AUTHOR_RATE_LIMITER?: AuthorRateLimiter;
   };
   return {
-    ...createServices(bindings.DB),
+    ...createServices(bindings.DB, request),
     expectedToken: bindings.AUTHOR_API_TOKEN,
     clientKey: request.headers.get('CF-Connecting-IP') ?? 'unknown',
     rateLimiter: bindings.AUTHOR_RATE_LIMITER,

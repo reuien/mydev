@@ -3,6 +3,6 @@ import { env } from 'cloudflare:workers';
 import ProjectCard from '../../components/ProjectCard.astro';
 import { createServicesFromEnvironment } from '../../http/context';
 import SiteLayout from '../../layouts/SiteLayout.astro';
-const projects = await createServicesFromEnvironment(env).projects.listPublic();
+const projects = await createServicesFromEnvironment(env, Astro.request).projects.listPublic();
 ---
 <SiteLayout title="Projects — MyDev" description="精选产品与工程实践。"><header class="page-head"><p class="eyebrow">Archive / Selected work</p><h1>Projects</h1><p>产品、实验，以及它们背后的工程决策。</p></header><section class="section">{projects.length ? projects.map((project,index)=><ProjectCard {project} {index}/>) : <p class="empty">项目档案正在整理中。</p>}</section></SiteLayout>
