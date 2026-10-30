@@ -68,3 +68,6 @@ service-account*.json
 
 # Documentation is maintained as a separate nested Git repository.
 docs/
+
+# Obsidian publishing checkpoints
+.obsidian-sync-*.json*

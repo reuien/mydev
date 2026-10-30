@@ -21,7 +21,10 @@
     "test:contract:d1": "vitest run tests/contract/d1-repositories.test.ts",
     "test:contract:sqlite": "vitest run tests/contract/sqlite-repositories.test.ts",
     "test:unit": "vitest run tests/unit",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "obsidian:check": "node --env-file-if-exists=.env --import tsx scripts/obsidian-sync.ts",
+    "obsidian:sync": "node --env-file-if-exists=.env --import tsx scripts/obsidian-sync.ts --apply",
+    "obsidian:watch": "node --env-file-if-exists=.env --import tsx scripts/obsidian-sync.ts --apply --watch"
   },
   "dependencies": {
     "@astrojs/cloudflare": "latest",

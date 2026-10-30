@@ -389,13 +389,13 @@ def('banner', () => drawLogo(), '重绘启动横幅');
 def('reboot', ({env}) => { env.reboot(); return []; }, '重跑一次启动序列');
 
 def('blog', () => {
-  window.top.location.href = appUrl('/blog');
+  window.top.location.href = appUrl('/home');
   return [P('正在打开博客…', C.soft)];
 }, '打开完整博客页面');
 
 def('open', ({args}) => {
   const target = args[0];
-  if (target === 'blog') window.top.location.href = appUrl('/blog');
+  if (target === 'blog') window.top.location.href = appUrl('/home');
   else if (target === 'about') window.top.location.href = appUrl('/about');
   else return [P('用法: open <blog|about>', C.soft)];
   return [P(`正在打开 ${target}…`, C.soft)];
