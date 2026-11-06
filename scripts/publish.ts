@@ -11,7 +11,7 @@ async function main(): Promise<void> {
     return;
   }
   const command = parseCommand(process.argv.slice(2));
-  const document = await readContentDocument(command.file);
+  const document = await readContentDocument(command.file, process.env.MYDEV_EXPECTED_CONTENT_HASH);
   await assertLocalAssetsExist(document);
   if (command.name === 'validate') {
     console.log(`Valid ${document.type}: ${document.slug}`);

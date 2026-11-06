@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
@@ -12,8 +13,20 @@ export type ContentDocument =
   | { type: 'post'; id?: string; slug: string; payload: z.infer<typeof createPostSchema> }
   | { type: 'project'; id?: string; slug: string; payload: z.infer<typeof createProjectSchema> };
 
-export async function readContentDocument(file: string): Promise<ContentDocument> {
-  const parsed = matter(await readFile(resolve(file), 'utf8'));
+export function contentHash(content: Buffer): string {
+  return createHash('sha256').update(content).digest('hex');
+}
+
+export async function readContentDocument(file: string, expectedHash?: string): Promise<ContentDocument> {
+  const content = await readFile(resolve(file));
+  if (expectedHash && contentHash(content) !== expectedHash) {
+    throw new Error('文章在校验后发生变化，请重新同步');
+  }
+  return parseContentDocument(content.toString('utf8'));
+}
+
+export function parseContentDocument(content: string): ContentDocument {
+  const parsed = matter(content);
   const base = baseSchema.parse(parsed.data);
   const { type: _type, id, ...fields } = parsed.data;
   const candidate = { ...fields, bodyMarkdown: parsed.content };

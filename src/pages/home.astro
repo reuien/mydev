@@ -5,10 +5,30 @@ import { author } from '../config/author';
 import { createServicesFromEnvironment } from '../http/context';
 import SiteLayout from '../layouts/SiteLayout.astro';
 import '../styles/home.css';
-const services = createServicesFromEnvironment(env);
-const [projects, posts] = await Promise.all([services.projects.listPublic(), services.posts.listPublic({ limit: 1, offset: 0 })]);
-const latestProject = projects[0];
-const latestPost = posts.items[0];
+const services = Promise.resolve().then(() => createServicesFromEnvironment(env, Astro.request));
+async function loadHomeSection<T>(section: 'projects' | 'posts', load: () => Promise<T>) {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      load(),
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(() => reject(new Error('Home section query timed out')), 1500);
+      }),
+    ]);
+  } catch {
+    console.warn(JSON.stringify({ event: 'home.section_unavailable', section }));
+    Astro.response.headers.set('Cache-Control', 'no-store');
+    return undefined;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+const [projects, posts] = await Promise.all([
+  loadHomeSection('projects', async () => (await services).projects.listPublic()),
+  loadHomeSection('posts', async () => (await services).posts.listPublic({ limit: 1, offset: 0 })),
+]);
+const latestProject = projects?.[0];
+const latestPost = posts?.items[0];
 ---
 <SiteLayout description={author.intro}>
   <div class="terminal-home">
@@ -51,10 +71,10 @@ const latestPost = posts.items[0];
       <header><div><p class="eyebrow">THE LATEST</p><h2>Along the way.</h2></div><p>最近的创作与记录</p></header>
       <div class="activity-grid">
         <a href={latestPost ? `/blog/${latestPost.slug}` : '/blog'}>
-          <span class="activity-kind">WRITING <span>{latestPost?.publishedAt?.slice(0, 10) ?? 'NOTES & THOUGHTS'}</span></span><strong>{latestPost?.title ?? '下一段思考，正在酝酿。'}</strong><small>{latestPost?.excerpt ?? '关于技术、实践，以及探索过程中的一些小小发现。第一篇文章将在发布后出现在这里。'}</small><span class="activity-cta">阅读文章 <b aria-hidden="true">↗</b></span>
+          <span class="activity-kind">WRITING <span>{latestPost?.publishedAt?.slice(0, 10) ?? 'NOTES & THOUGHTS'}</span></span><strong>{latestPost?.title ?? '下一段思考，正在酝酿。'}</strong><small>{latestPost?.excerpt ?? (posts ? '关于技术、实践，以及探索过程中的一些小小发现。第一篇文章将在发布后出现在这里。' : '最新文章暂时无法加载，仍可前往文章列表。')}</small><span class="activity-cta">阅读文章 <b aria-hidden="true">↗</b></span>
         </a>
         <a href={latestProject ? `/projects/${latestProject.slug}` : '/projects'}>
-          <span class="activity-kind">PROJECT <span>BUILD & EXPERIMENT</span></span><strong>{latestProject?.name ?? '保持好奇，继续构建。'}</strong><small>{latestProject?.summary ?? '从一个小想法开始，让代码带来真实的变化。这里将记录正在构建的项目。'}</small><span class="activity-cta">探索项目 <b aria-hidden="true">↗</b></span>
+          <span class="activity-kind">PROJECT <span>BUILD & EXPERIMENT</span></span><strong>{latestProject?.name ?? '保持好奇，继续构建。'}</strong><small>{latestProject?.summary ?? (projects ? '从一个小想法开始，让代码带来真实的变化。这里将记录正在构建的项目。' : '最新项目暂时无法加载，仍可前往项目列表。')}</small><span class="activity-cta">探索项目 <b aria-hidden="true">↗</b></span>
         </a>
       </div>
     </section>
