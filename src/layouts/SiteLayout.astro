@@ -1,6 +1,7 @@
 ---
 import Header from '../components/Header.astro';
 import CosmicBackdrop from '../components/CosmicBackdrop.astro';
+import IdleFog from '../components/IdleFog.astro';
 import OpticalCursor from '../components/OpticalCursor.astro';
 import '../styles/global.css';
 import TerminalShell from '../components/TerminalShell.astro';
@@ -27,6 +28,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin);
     <a class="skip-link" href="#content">跳至主要内容</a>
     <CosmicBackdrop />
     <OpticalCursor />
+    <IdleFog />
     <Header />
     <main id="content"><slot /></main>
     <TerminalShell mode="panel" />
