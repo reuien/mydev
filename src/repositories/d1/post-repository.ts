@@ -1,3 +1,4 @@
+import { readD1 } from './read-retry';
 import type { D1Database } from '@cloudflare/workers-types';
 
 import { IdempotencyConflictError, SlugConflictError, StorageUnavailableError } from '../../domain/errors';
@@ -62,7 +63,7 @@ export class D1PostRepository implements PostRepository {
 
   async listPublic(page: PageRequest): Promise<PageResult<PostListItem>> {
     try {
-      const [rows, count] = await Promise.all([
+      const [rows, count] = await readD1(() => Promise.all([
         this.database
           .prepare(
             `SELECT ${POST_COLUMNS} FROM posts WHERE status = 'published'
@@ -71,7 +72,7 @@ export class D1PostRepository implements PostRepository {
           .bind(page.limit, page.offset)
           .all<PostRow>(),
         this.database.prepare("SELECT COUNT(*) AS total FROM posts WHERE status = 'published'").first<{ total: number }>(),
-      ]);
+      ]));
       return { items: rows.results.map(toPost).map(toPostListItem), total: Number(count?.total ?? 0) };
     } catch (error) {
       throw new StorageUnavailableError('D1 post listing failed', { cause: error });
@@ -201,7 +202,7 @@ export class D1PostRepository implements PostRepository {
 
   private async findOne(sql: string, value: string): Promise<Post | null> {
     try {
-      const row = await this.database.prepare(sql).bind(value).first<PostRow>();
+      const row = await readD1(() => this.database.prepare(sql).bind(value).first<PostRow>());
       return row ? toPost(row) : null;
     } catch (error) {
       throw new StorageUnavailableError('D1 post lookup failed', { cause: error });

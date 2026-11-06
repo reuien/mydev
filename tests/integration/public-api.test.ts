@@ -45,7 +45,7 @@ describe('public API', () => {
     );
 
     expect(response.status).toBe(200);
-    expect(response.headers.get('Cache-Control')).toBe('public, max-age=60, s-maxage=300, stale-while-revalidate=30');
+    expect(response.headers.get('Cache-Control')).toBe('no-store');
     expect(response.headers.get('X-Request-Id')).toBe('818ec24d-92bf-4e24-a2f3-36d22acdb769');
     await expect(response.json()).resolves.toMatchObject({ meta: { page: 2, pageSize: 10, total: 11, totalPages: 2 } });
     expect(apiServices.postQueries.listPublic).toHaveBeenCalledWith({ limit: 10, offset: 10 });

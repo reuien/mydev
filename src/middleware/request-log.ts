@@ -1,7 +1,7 @@
 import { requestIdFor } from './request-id';
 
 const sources = new Set(['public-api', 'author-api', 'blog-page', 'middleware',
-  'cache-read', 'cache-write', 'cache-invalidate', 'cache-fallback-version', 'storage-stale-fallback']);
+  'cache-read', 'cache-write', 'cache-invalidate', 'cache-fallback-version', 'storage-stale-fallback', 'post-groups-fallback']);
 
 const errorTypes = new Set(['Error', 'TypeError', 'RangeError', 'SyntaxError', 'StorageUnavailableError',
   'SlugConflictError', 'IdempotencyConflictError', 'DomainError']);

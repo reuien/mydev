@@ -3,7 +3,7 @@ import { logRequestError } from '../../middleware/request-log';
 import { env } from 'cloudflare:workers';
 import PostCard from '../../components/PostCard.astro';
 import { StorageUnavailableError } from '../../domain/errors';
-import { NO_STORE, PUBLIC_CACHE_CONTROL } from '../../http/response';
+import { NO_STORE } from '../../http/response';
 import { createServicesFromEnvironment } from '../../http/context';
 import SiteLayout from '../../layouts/SiteLayout.astro';
 const pageSize = 10;
@@ -15,7 +15,7 @@ let unavailable = false;
 let blogPage;
 try {
   blogPage = await services.postQueries.listBlogPage({limit:pageSize,offset:(page-1)*pageSize});
-  Astro.response.headers.set('Cache-Control', PUBLIC_CACHE_CONTROL);
+  Astro.response.headers.set('Cache-Control', NO_STORE);
 } catch (error) {
   if (!(error instanceof StorageUnavailableError)) throw error;
   logRequestError(Astro.request, error, 'blog-page');

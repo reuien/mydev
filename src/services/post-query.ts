@@ -59,7 +59,12 @@ export class CloudflarePostQueryCache implements PostQueryCache {
 
   async get<T>(key: string, version?: string): Promise<CacheEntry<T> | null> {
     const response = await this.cache.match(await this.requestFor(key, version));
-    return response ? ((await response.json()) as CacheEntry<T>) : null;
+    if (!response) return null;
+    const entry = await response.json() as CacheEntry<T>;
+    if (!entry || !Number.isFinite(entry.freshUntil) || !Object.prototype.hasOwnProperty.call(entry, 'value')) {
+      throw new TypeError('Invalid query cache entry');
+    }
+    return entry;
   }
 
   async set<T>(key: string, entry: CacheEntry<T>, version?: string): Promise<void> {
@@ -117,15 +122,17 @@ export class PostQueryService {
     return this.readThrough(`detail:${slug}`, () => this.posts.findPublicBySlug(slug), (post) => post !== null);
   }
 
-  listBlogPage(page: PageRequest): Promise<BlogPage> {
-    return this.readThrough(
-      `blog:${page.limit}:${page.offset}`,
-      async () => {
-        const [result, groups] = await Promise.all([this.posts.listPublic(page), this.groups.list()]);
-        return { ...result, groups };
-      },
-      (result) => result.total > 0,
-    );
+  async listBlogPage(page: PageRequest): Promise<BlogPage> {
+    const [result, groups] = await Promise.all([
+      this.listPublic(page),
+      this.groups.list().catch((error: unknown) => {
+        if (!(error instanceof StorageUnavailableError)) throw error;
+        // Group names are optional decoration; their outage must not hide posts.
+        this.reportFailure(error, 'post-groups-fallback');
+        return [];
+      }),
+    ]);
+    return { ...result, groups };
   }
 
   private reportFailure(error: unknown, operation: string): void {

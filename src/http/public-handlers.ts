@@ -4,7 +4,7 @@ import type { Post } from '../domain/post';
 import { slugSchema } from '../schemas/common';
 import type { PostQueryService } from '../services/post-query';
 import { handleRequest } from '../middleware/error-handler';
-import { errorResponse, successResponse } from './response';
+import { errorResponse, successResponse, NO_STORE } from './response';
 
 function publicPost(post: Post) {
   const { status: _status, createdAt: _createdAt, ...result } = post;
@@ -40,12 +40,12 @@ export function handlePublicPostList(request: Request, service: PostQueryService
       pageSize,
       total: result.total,
       totalPages: result.total === 0 ? 0 : Math.ceil(result.total / pageSize),
-    });
+    }, NO_STORE);
   });
 }
 
 export function handlePublicPostGroupList(request: Request, service: PostGroupService): Promise<Response> {
-  return handleRequest(request, async (requestId) => successResponse(await service.list(), requestId));
+  return handleRequest(request, async (requestId) => successResponse(await service.list(), requestId, undefined, NO_STORE));
 }
 
 export function handlePublicPostDetail(request: Request, service: PostQueryService, slug: string): Promise<Response> {
@@ -53,7 +53,7 @@ export function handlePublicPostDetail(request: Request, service: PostQueryServi
     if (!slugSchema.safeParse(slug).success) return errorResponse(404, 'NOT_FOUND', '内容不存在', requestId);
     const post = await service.getPublicBySlug(slug);
     return post
-      ? successResponse(publicPost(post), requestId)
+      ? successResponse(publicPost(post), requestId, undefined, NO_STORE)
       : errorResponse(404, 'NOT_FOUND', '内容不存在', requestId);
   });
 }

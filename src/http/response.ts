@@ -25,8 +25,8 @@ function json(body: unknown, status: number, requestId: string, cacheControl: st
   });
 }
 
-export function successResponse(data: unknown, requestId: string, meta?: unknown): Response {
-  return json(meta === undefined ? { data } : { data, meta }, 200, requestId, PUBLIC_CACHE_CONTROL);
+export function successResponse(data: unknown, requestId: string, meta?: unknown, cacheControl = PUBLIC_CACHE_CONTROL): Response {
+  return json(meta === undefined ? { data } : { data, meta }, 200, requestId, cacheControl);
 }
 
 export function authorSuccessResponse(
