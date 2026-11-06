@@ -3,20 +3,31 @@
 <style>
   .idle-fog {
     position: fixed;
-    inset: 0;
+    top: var(--fog-y, 50%);
+    left: var(--fog-x, 50%);
+    width: 124px;
+    height: 94px;
     z-index: 8;
     pointer-events: none;
     opacity: 0;
+    border-radius: 44% 56% 54% 46% / 54% 42% 58% 46%;
+    transform: translate(-50%, -50%) scale(0.84);
     background:
-      radial-gradient(ellipse 260px 175px at var(--fog-x, 50%) var(--fog-y, 50%),
-        rgb(170 219 209 / 18%), rgb(105 169 159 / 7%) 55%, transparent 100%),
-      radial-gradient(ellipse at 50% 100%, rgb(155 200 193 / 5%), transparent 70%);
-    transition: opacity 240ms ease-out;
+      radial-gradient(ellipse at 25% 12%, rgb(234 255 252 / 22%), transparent 38%),
+      linear-gradient(155deg, rgb(210 255 248 / 12%), transparent 48%, rgb(108 195 186 / 12%));
+    backdrop-filter: blur(3px) saturate(1.55) contrast(1.08);
+    box-shadow:
+      inset 1px 1px 1px rgb(233 255 250 / 54%),
+      inset -1px -2px 2px rgb(192 255 245 / 21%),
+      inset 0 0 14px rgb(194 255 247 / 13%),
+      0 5px 16px rgb(0 0 0 / 32%);
+    transition: opacity 150ms ease-out, transform 150ms ease-out;
   }
 
   .idle-fog.is-visible {
     opacity: 1;
-    transition-duration: 1200ms;
+    transform: translate(-50%, -50%) scale(1);
+    transition-duration: 270ms;
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -45,7 +56,7 @@
       fog.style.setProperty('--fog-x', `${clientX}px`);
       fog.style.setProperty('--fog-y', `${clientY}px`);
       fog.classList.add('is-visible');
-    }, 3000);
+    }, 800);
   }
 
   document.addEventListener('pointermove', waitForIdle, { passive: true });
